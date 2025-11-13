@@ -1,0 +1,42 @@
+# === ENTORNOS Y CONFIGURACIÓN ===
+.env
+/entorno-futbot/
+venv/
+.envrc
+
+# === ARCHIVOS DE COMPILACIÓN / CACHÉ ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.py.class
+
+# === LOGS Y TEMPORALES ===
+*.log
+*.out
+*.tmp
+*.swp
+*.swo
+
+# === ENTORNOS Y DEPENDENCIAS ===
+# Archivos de control de pip o virtualenv
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# === SISTEMAS OPERATIVOS ===
+# Windows
+Thumbs.db
+
+# === IDEs / EDITORES ===
+# VS Code
+.vscode/
+
+# === ARCHIVOS DE EJECUCIÓN / CACHE ===
+*.sqlite3
+*.db
+.cache/
+.pytest_cache/
