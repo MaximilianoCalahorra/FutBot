@@ -1,5 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
+from services.football_data_org_api_service import FootballDataOrgApiService
+from utils.formatters import formatear_clasificacion_tabla
 
 class CommandHandlerBot:
   """
@@ -10,6 +12,7 @@ class CommandHandlerBot:
     Inicializa el manejador de comandos.
     """
     self._config = config
+    self._api_service = FootballDataOrgApiService(config)
   
   async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -56,14 +59,12 @@ class CommandHandlerBot:
     """
     Responde al comando /tabla.
     """
-    await update.message.reply_html(
-      f"📊 <b>Tabla de posiciones - 12/11/2025</b>\n\n"
-      "1️⃣ <b>River Plate</b> — 23 pts\n"
-      "2️⃣ <b>Boca Juniors</b> — 21 pts\n"
-      "3️⃣ <b>Talleres</b> — 20 pts\n"
-      "4️⃣ <b>Racing Club</b> — 18 pts\n"
-      "5️⃣ <b>Lanús</b> — 16 pts"
-    )
+    try:
+      clasificacion = await self._api_service.obtener_clasificacion()
+      mensaje = formatear_clasificacion_tabla(clasificacion)
+      await update.message.reply_html(mensaje)
+    except Exception as e:
+      await update.message.reply_text(f"❌ Error obteniendo la tabla: {e}")
     
   async def estadisticas(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
