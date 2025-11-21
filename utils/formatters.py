@@ -78,3 +78,17 @@ def formatear_partidos(partidos):
     mensaje += formatear_partido(p)
 
   return mensaje.strip()
+
+def formatear_goleadores(goleadores):
+  texto = "🎯 <b>Goleadores - La Liga</b>\n\n"
+
+  i = 0
+  for g in goleadores:
+    i += 1
+    texto += (
+      f"<b>{i}. {g['jugador']}</b>\n"
+      f"{g['equipo']}\n"
+      f"⚽️ {g['goles']} goles\n\n"
+    )
+
+  return texto

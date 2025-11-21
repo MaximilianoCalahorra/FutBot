@@ -85,7 +85,7 @@ class FootballDataOrgApiService:
       goles_local = partido["score"]["fullTime"]["home"] or 0
       goles_visitante = partido["score"]["fullTime"]["away"] or 0
 
-      # Si no hay score todavía:
+      # Si no hay score todavía
       if goles_local is None or goles_visitante is None:
           marcador = "vs"
       else:
@@ -100,3 +100,32 @@ class FootballDataOrgApiService:
       })
 
     return partidos
+  
+  async def obtener_estadisticas(self):
+    url = f"{self._url_base}/competitions/{self._id_liga}/scorers"
+    
+    headers = {
+      "X-Auth-Token": self._api_key,
+      "User-Agent": "FutBot/1.0"
+    }
+    
+    # Consultar:
+    async with aiohttp.ClientSession() as session:
+      async with session.get(url, headers=headers) as response:
+        data = await response.json()
+    
+    goleadores_completo = data["scorers"]
+    
+    goleadores = []
+    for registro in goleadores_completo:
+      jugador = registro["player"]["name"]
+      equipo = registro["team"]["name"]
+      goles = registro["goals"]
+      
+      goleadores.append({
+        "jugador": jugador,
+        "equipo": equipo,
+        "goles": goles
+      })
+    
+    return goleadores
