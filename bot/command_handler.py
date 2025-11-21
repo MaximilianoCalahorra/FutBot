@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 from services.football_data_org_api_service import FootballDataOrgApiService
-from utils.formatters import formatear_clasificacion_tabla
+from utils.formatters import formatear_clasificacion_tabla, formatear_partidos
 
 class CommandHandlerBot:
   """
@@ -46,14 +46,12 @@ class CommandHandlerBot:
     """
     Responde al comando /hoy.
     """
-    await update.message.reply_html(
-      f"📅 <b>Partidos del día - 12/11/2025</b>\n\n"
-      "⚽ Lanús 🆚 Banfield — <b>14:00 hs</b>\n"
-      "⚽ Boca Juniors 🆚 River Plate — <b>15:00 hs</b>\n"
-      "⚽ Racing 🆚 Independiente — <b>16:00 hs</b>\n"
-      "⚽ Belgrano 🆚 Talleres — <b>17:00 hs</b>\n"
-      "⚽ Huracán 🆚 San Lorenzo — <b>18:00 hs</b>"
-    )
+    try:
+      partidos = await self._api_service.obtener_partidos_hoy()
+      mensaje = formatear_partidos(partidos)
+      await update.message.reply_html(mensaje)
+    except Exception as e:
+      await update.message.reply_text(f"❌ Error obteniendo los partidos de hoy: {e}")
 
   async def tabla(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
