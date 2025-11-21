@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 def emoji_pos(pos):
   if pos <= 4:
       return "🟦"
@@ -29,3 +31,50 @@ def formatear_clasificacion_tabla(clasificacion):
   )
   
   return texto
+
+def convertir_a_zona_horaria_argentina(datetime_str):
+  # Convertir del formato ISO con Z al objeto datetime UTC:
+  dt_utc = datetime.fromisoformat(datetime_str.replace("Z", "+00:00"))
+
+  # Convertir a UTC-3 (hora Argentina):
+  dt_arg = dt_utc - timedelta(hours=3)
+
+  # Devolver fecha y hora por separado:
+  return dt_arg.strftime("%d/%m/%Y"), dt_arg.strftime("%H:%M")
+
+def formatear_partido(partido):
+  estado = partido["estado"]
+
+  # Según el estado del partido lo mostramos de diferente manera:
+  if estado == "TIMED":  # Partido a futuro.
+    fecha_str, hora_str = partido.get("fecha_hora", ("", ""))
+    return (
+      f"🕒 {fecha_str} {hora_str}\n"
+      f"{partido['local']['nombre']} vs {partido['visitante']['nombre']}"
+    )
+
+  elif estado in ["IN_PLAY", "PAUSED"]:  # Partido en juego.
+    return (
+      f"⏳ En juego\n"
+      f"{partido['local']['nombre']} {partido['marcador']} {partido['visitante']['nombre']}\n\n"
+    )
+
+  elif estado == "FINISHED":  # Partido finalizado.
+    return (
+      f"🏁 Finalizado\n"
+      f"{partido['local']['nombre']} {partido['marcador']} {partido['visitante']['nombre']}\n\n"
+    )
+
+def formatear_partidos(partidos):
+  if not partidos:
+    return "❌ No hay partidos programados para hoy."
+
+  # Todos los partidos deberían tener misma fecha
+  fecha, _ = partidos[0].get("fecha_hora", ("Sin fecha", ""))
+
+  mensaje = f"📅 <b>Partidos del día - {fecha}</b>\n\n"
+
+  for p in partidos:
+    mensaje += formatear_partido(p)
+
+  return mensaje.strip()
