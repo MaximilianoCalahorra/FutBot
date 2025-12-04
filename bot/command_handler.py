@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from services.football_data_org_api_service import FootballDataOrgApiService
+from services.api_service import ApiService
 from utils.formatters import formatear_clasificacion_tabla, formatear_partidos, formatear_goleadores
 
 class CommandHandlerBot:
@@ -12,7 +12,7 @@ class CommandHandlerBot:
     Inicializa el manejador de comandos.
     """
     self._config = config
-    self._api_service = FootballDataOrgApiService(config)
+    self._api_service = ApiService(config)
   
   async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -24,8 +24,7 @@ class CommandHandlerBot:
       "Puedo informarte sobre:\n"
       "📅 <b>Partidos del día</b>\n"
       "📊 <b>Tabla de posiciones</b>\n"
-      "🥅 <b>Goleadores</b> y <b>asistidores</b>\n"
-      "🟥 <b>Tarjetas</b> amarillas y rojas\n\n"
+      "🥅 <b>Goleadores</b>\n\n"
       "Escribí /ayuda para ver todos los comandos disponibles ⚙️"
     )
 
@@ -38,7 +37,7 @@ class CommandHandlerBot:
       "🤖 <b>/start</b> — Te da la bienvenida y explica qué puede hacer FutBot.\n"
       "📅 <b>/hoy</b> — Muestra los <b>partidos del día</b> (con hora y equipos).\n"
       "📊 <b>/tabla</b> — Muestra la <b>tabla de posiciones</b> actualizada.\n"
-      "📈 <b>/estadisticas</b> — Muestra <b>goleadores</b>, <b>asistidores</b> y <b>sanciones</b> (amarillas y rojas).\n\n"
+      "📈 <b>/goleadores</b> — Muestra el <b>top 10</b> de goleadores.\n\n"
       "⚙️ Próximamente agregaré más funciones, como consultar equipos o jugadores específicos 👀"
     )
 
@@ -64,13 +63,13 @@ class CommandHandlerBot:
     except Exception as e:
       await update.message.reply_text(f"❌ Error obteniendo la tabla: {e}")
     
-  async def estadisticas(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+  async def goleadores(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    Responde al comando /estadisticas.
+    Responde al comando /goleadores.
     """
     try:
-      goleadores = await self._api_service.obtener_estadisticas()
+      goleadores = await self._api_service.obtener_goleadores()
       mensaje = formatear_goleadores(goleadores)
       await update.message.reply_html(mensaje)
     except Exception as e:
-      await update.message.reply_text(f"❌ Error obteniendo las estadísticas: {e}")
+      await update.message.reply_text(f"❌ Error obteniendo los goleadores: {e}")
