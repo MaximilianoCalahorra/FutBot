@@ -27,7 +27,7 @@ class FutBot:
     self._application.add_handler(CommandHandler("ayuda", self._command_handler.ayuda))
     self._application.add_handler(CommandHandler("hoy", self._command_handler.hoy))
     self._application.add_handler(CommandHandler("tabla", self._command_handler.tabla))
-    self._application.add_handler(CommandHandler("estadisticas", self._command_handler.estadisticas))
+    self._application.add_handler(CommandHandler("goleadores", self._command_handler.goleadores))
   
   def run(self):
     """

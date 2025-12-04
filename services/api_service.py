@@ -2,19 +2,25 @@ import aiohttp
 from datetime import datetime
 from utils.formatters import convertir_a_zona_horaria_argentina
 
-class FootballDataOrgApiService:
+class ApiService:
   def __init__(self, config):
-    self._url_base = config.football_data_org_api_base_url
-    self._id_liga = config.id_liga
-    self._api_key = config.football_data_org_api_key
+    # API Football Data:
+    self._football_data_api_url_base = config.football_data_org_api_base_url
+    self._id_liga_football_data = config.id_liga_football_data
+    self._api_key_football_data = config.football_data_org_api_key
+    
+    # API Soccerdata:
+    self._soccerdata_api_url_base = config.soccerdata_api_base_url
+    self._id_liga_soccerdata = config.id_liga_soccerdata
+    self._api_key_soccerdata = config.soccerdata_api_key
   
   async def obtener_clasificacion(self):
     # Endpoint a consultar:
-    url = f"{self._url_base}/competitions/{self._id_liga}/standings"
+    url = f"{self._football_data_api_url_base}/competitions/{self._id_liga_football_data}/standings"
 
     # Headers:
     headers = {
-      "X-Auth-Token": self._api_key,
+      "X-Auth-Token": self._api_key_football_data,
       "User-Agent": "FutBot/1.0"
     }
 
@@ -46,66 +52,49 @@ class FootballDataOrgApiService:
     return clasificacion
   
   async def obtener_partidos_hoy(self):
-    url = f"{self._url_base}/competitions/{self._id_liga}/matches"  # Endpoint a consultar.
-    hoy = datetime.today().strftime("%Y-%m-%d")  # Fecha de hoy.
-
-    headers = {
-      "X-Auth-Token": self._api_key,
-      "User-Agent": "FutBot/1.0"
-    }
-
-    # Parámetros de la consulta:
-    params = {
-        "dateFrom": hoy,
-        "dateTo": hoy
-    }
-
-    # Consultar:
-    async with aiohttp.ClientSession() as session:
-      async with session.get(url, headers=headers, params=params) as response:
-        data = await response.json()
-            
-    partidos_completo = data["matches"]
+    hoy = datetime.today().strftime("%d-%m-%Y")  # Fecha de hoy.
+    url = f"https://api.soccerdataapi.com/matches/?league_id={self._id_liga_soccerdata}&date={hoy}&auth_token={self._api_key_soccerdata}"
     
+    async with aiohttp.ClientSession() as session:
+      async with session.get(url) as response:
+        data = await response.json()
+    
+    partidos_completo = data[0]["stage"][0]["matches"] if data[0].get("stage") else []
     partidos = []
+    
     for partido in partidos_completo:
-      fecha = convertir_a_zona_horaria_argentina(partido["utcDate"])
+      fecha, hora = convertir_a_zona_horaria_argentina(partido["date"], partido["time"])
+      equipo_local = partido["teams"]["home"]["name"]
+      equipo_visitante = partido["teams"]["away"]["name"]
       estado = partido["status"]
-      equipo_local = {
-        "escudo": partido["homeTeam"]["crest"],
-        "nombre": partido["homeTeam"]["name"],
-        "sigla_oficial": partido["homeTeam"]["tla"]
-      }
-      equipo_visitante = {
-        "escudo": partido["awayTeam"]["crest"],
-        "nombre": partido["awayTeam"]["name"],
-        "sigla_oficial": partido["awayTeam"]["tla"]
-      }
-
-      goles_local = partido["score"]["fullTime"]["home"] or 0
-      goles_visitante = partido["score"]["fullTime"]["away"] or 0
-
-      # Si no hay score todavía
-      if goles_local is None or goles_visitante is None:
-          marcador = "vs"
+      minutos = partido["minute"]
+      marcador_local = partido["goals"]["home_ft_goals"]
+      marcador_visitante = partido["goals"]["away_ft_goals"]
+      eventos = partido["events"]
+      
+      if estado == "pre-match":
+        marcador = "vs"
       else:
-          marcador = f"{goles_local} - {goles_visitante}"
+        marcador = f"{marcador_local} - {marcador_visitante}"
       
       partidos.append({
-          "fecha_hora": fecha,
-          "estado": estado,
-          "local": equipo_local,
-          "visitante": equipo_visitante,
-          "marcador": marcador
+        "fecha": fecha,
+        "hora": hora,
+        "estado": estado,
+        "minutos": minutos,
+        "local": equipo_local,
+        "visitante": equipo_visitante,
+        "marcador": marcador,
+        "eventos": eventos
       })
-
+      
     return partidos
-  
-  async def obtener_estadisticas(self):
-    url = f"{self._url_base}/competitions/{self._id_liga}/scorers"
+    
+  async def obtener_goleadores(self):
+    url = f"{self._football_data_api_url_base}/competitions/{self._id_liga_football_data}/scorers"
     
     headers = {
-      "X-Auth-Token": self._api_key,
+      "X-Auth-Token": self._api_key_football_data,
       "User-Agent": "FutBot/1.0"
     }
     

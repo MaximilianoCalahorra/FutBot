@@ -1,34 +1,62 @@
-# ⚽ FutBot — Liga Profesional Argentina
+# ⚽ FutBot — La Liga (España)
 
-Asistente de Telegram que brinda información sobre la Liga Profesional Argentina 🇦🇷: partidos del día, tabla de posiciones y estadísticas de jugadores (goleadores, asistidores y sanciones).
+Asistente de Telegram que brinda información actualizada sobre La Liga de España 🇪🇸:
+partidos del día, tabla de posiciones y top 10 de goleadores.
 
 ## 🏗️ Estructura actual del proyecto
 
 ```bash
 futbot/
-├── main.py                   # Punto de entrada del bot
-├── .env                      # Variables sensibles (token y API key)
-├── .env.example              # Ejemplo de variables requeridas
+├── main.py                     # Punto de entrada del bot
+├── .env                        # Variables sensibles
+├── .env.example                # Ejemplo de configuración
+│
 ├── config/
-│   └── config.py             # Clase Config: carga de .env y parámetros del proyecto
-└── services/
-    ├── futbot.py             # Clase principal FutBot (configura y ejecuta el bot)
-    └── command_handler.py    # Maneja comandos /start, /ayuda, /hoy, /tabla, /estadisticas
+│   └── config.py               # Clase Config: carga variables de entorno y constantes del proyecto
+│
+├── bot/
+│   ├── futbot.py               # Inicializa el bot, registra comandos y arranca la app
+│   └── command_handler.py      # Implementación de cada comando (/start, /ayuda, /hoy, /tabla, /goleadores)
+│
+├── services/
+│   └── api_service.py          # Capa de comunicación con APIs externas (Football-Data + SoccerData)
+│
+└── utils/
+    └── formatters.py           # Funciones reutilizables para formatear mensajes (partidos, tabla, goles, eventos)
 ```
 
 ---
 
 ## ⚙️ Comandos implementados
 
-| Comando         | Descripción                                                    |
-| --------------- | -------------------------------------------------------------- |
-| `/start`        | Da la bienvenida y explica las funciones del bot.              |
-| `/ayuda`        | Lista todos los comandos disponibles.                          |
-| `/hoy`          | Muestra los partidos del día en la Liga Profesional Argentina. |
-| `/tabla`        | Muestra la tabla de posiciones actualizada.                    |
-| `/estadisticas` | Muestra los goleadores, asistidores y sanciones.               |
+| Comando       | Descripción                                             |
+| ------------- | ------------------------------------------------------- |
+| `/start`      | Da la bienvenida y explica las funciones del bot.       |
+| `/ayuda`      | Lista todos los comandos disponibles.                   |
+| `/hoy`        | Muestra los partidos del día en La Liga.                |
+| `/tabla`      | Muestra la tabla de posiciones actualizada.             |
+| `/goleadores` | Muestra el top 10 de máximos goleadores del campeonato. |
 
-(*Actualmente las respuestas son simuladas; en la próxima etapa se conectarán con la API real.*)
+---
+
+## 🌐 APIs utilizadas
+
+El bot combina información obtenida desde dos APIs para cubrir todos los datos necesarios:
+
+### 1️⃣ Football-Data API (v4)
+
+https://api.football-data.org/v4/
+
+Usada para:
+- Tabla de posiciones.
+- Ranking de goleadores.
+
+### 2️⃣ SoccerData API
+
+https://api.soccerdataapi.com/
+
+Usada para:
+- Partidos del día con los eventos en caso de que sea un partido en juego o finalizado.
 
 ---
 
@@ -38,7 +66,8 @@ El archivo `.env` debe incluir las siguientes variables:
 
 ```bash
 TELEGRAM_TOKEN=tu_token_de_telegram
-FOOTBALL_API_KEY=tu_api_key_de_football
+FOOTBALL_DATA_ORG_API_KEY=tu_api_key_de_football_data_org
+SOCCERDATA_API_KEY=tu_api_key_de_soccerdata
 ```
 
 📄 En el repositorio hay un `.env.example` para guiar la configuración inicial.
@@ -47,67 +76,86 @@ FOOTBALL_API_KEY=tu_api_key_de_football
 
 ## 🧠 Descripción técnica
 
-🔹 **Clase `Config`**
+🔹 **`Config`**
 
-- Carga las variables de entorno automáticamente (`load_dotenv()`).
+- Carga las variables de entorno mediante `python-dotenv`.
 
-- Expone propiedades para acceder a `TELEGRAM_TOKEN`, `FOOTBALL_API_KEY`, y parámetros fijos como:
+- Expone claves de APIs y parámetros de configuración generales.
 
-  - `id_liga = 128` (Liga Profesional Argentina)
+- Define constantes como:
 
-  - `temporada = 2025`
+    - id de La Liga para ambas APIs
 
-  - `football_api_base_url = "https://v3.football.api-sports.io/"`
+    - Zona horaria y formatos de fecha
 
-Incluye validaciones para asegurar que el entorno esté correctamente configurado antes de iniciar el bot.
+    - URLs base de cada API
 
----
-
-🔹 **Clase `FutBot`**
-
-- Crea la aplicación principal de Telegram usando `Application.builder()`.
-
-- Registra los comandos disponibles mediante `CommandHandler`.
-
-- Inicia el bot con `run_polling()`.
+Incluye validaciones para asegurar que el bot no se ejecute con claves ausentes.
 
 ---
 
-🔹 **Clase `CommandHandlerBot`**
+🔹 **`ApiService`**
 
-Maneja cada comando de usuario.
+Capa intermedia encargada de interactuar con las APIs externas.
 
-Actualmente las respuestas son estáticas, pero respetan el formato y los estilos (HTML con emojis y estructura limpia).
+Encapsula peticiones como:
 
-Ejemplo de `/start`:
+- Partidos del día y sus eventos
 
-```text
-¡Hola Maxi! 👋 Soy FutBot, tu asistente especializado en fútbol ⚽."
+- Tabla completa
 
-Puedo informarte sobre:
-📅 Partidos del día
-📊 Tabla de posiciones
-🥅 Goleadores y asistidores
-🟥 Tarjetas amarillas y rojas
+- Goleadores
 
-Escribí /ayuda para ver todos los comandos disponibles ⚙️
+Esto permite que el resto del código no dependa de detalles HTTP.
+
+---
+
+🔹 **`formatters.py`**
+
+Conjunto de funciones responsables de dar forma a los mensajes enviados al usuario:
+
+- Formateo de partidos según estado: 🕒 futuros — ⏳ en juego — 🏁 finalizados
+
+- Formato de eventos del partido (incluye íconos como ⚽️, ⚽️(P), 🔄, 🟥, etc.)
+
+- Tabla de posiciones
+
+- Ranking de goleadores
+
+Separar esta lógica permite mantener el bot modular y escalable.
+
+---
+
+🔹 **`FutBot`** y **`CommandHandler`**
+
+- Registran los comandos del bot.
+
+- Implementan el flujo de respuesta para cada comando.
+
+- Llaman a `ApiService` para obtener datos.
+
+- Delegan en `formatters.py` para dar estructura a los mensajes.
+
+El bot se ejecuta con:
+
+```bash
+application.run_polling()
 ```
-
 ---
 
 ## 📦 Dependencias (`requirements.txt`)
 
 ```txt
 python-telegram-bot==21.4
-requests==2.32.3
+aiohttp==3.9.5
 python-dotenv==1.0.1
 ```
 
-| Paquete               | Uso                                    | Comentario                                                       |
-| --------------------- | -------------------------------------- | ---------------------------------------------------------------- |
-| `python-telegram-bot` | Manejo de la API de Telegram.          | Versión 21+ con soporte async y tipado moderno. |
-| `requests`            | Consultas HTTP a la API-Football.      | Ligero y confiable.                |
-| `python-dotenv`       | Carga de variables del archivo `.env`. | Facilita la configuración.                          |
+| Paquete               | Uso                                         |
+| --------------------- | ------------------------------------------- |
+| `python-telegram-bot` | Manejo de la API de Telegram en modo async. |
+| `aiohttp`             | Requests asincrónicos a las APIs.           |
+| `python-dotenv`       | Carga de variables desde `.env`.            |
 
 ---
 
@@ -119,6 +167,7 @@ pip install -r requirements.txt
 
 # Crear archivo .env
 cp .env.example .env
+
 # (completar con tus claves)
 
 # Ejecutar el bot
