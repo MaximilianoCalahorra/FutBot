@@ -32,16 +32,6 @@ def formatear_clasificacion_tabla(clasificacion):
   
   return texto
 
-# def convertir_a_zona_horaria_argentina(datetime_str):
-#   # Convertir del formato ISO con Z al objeto datetime UTC:
-#   dt_utc = datetime.fromisoformat(datetime_str.replace("Z", "+00:00"))
-
-#   # Convertir a UTC-3 (hora Argentina):
-#   dt_arg = dt_utc - timedelta(hours=3)
-
-#   # Devolver fecha y hora por separado:
-#   return dt_arg.strftime("%d/%m/%Y"), dt_arg.strftime("%H:%M")
-
 def convertir_a_zona_horaria_argentina(date_str, time_str):
   """
   Convierte la fecha y hora entregada por la API (en UTC)
@@ -64,29 +54,6 @@ def convertir_a_zona_horaria_argentina(date_str, time_str):
   hora = dt_arg.strftime("%H:%M")
 
   return fecha, hora
-
-# def formatear_partido(partido):
-#   estado = partido["estado"]
-
-#   # Según el estado del partido lo mostramos de diferente manera:
-#   if estado == "TIMED":  # Partido a futuro.
-#     fecha_str, hora_str = partido.get("fecha_hora", ("", ""))
-#     return (
-#       f"🕒 {fecha_str} {hora_str}\n"
-#       f"{partido['local']['nombre']} vs {partido['visitante']['nombre']}"
-#     )
-
-#   elif estado in ["IN_PLAY", "PAUSED"]:  # Partido en juego.
-#     return (
-#       f"⏳ En juego\n"
-#       f"{partido['local']['nombre']} {partido['marcador']} {partido['visitante']['nombre']}\n\n"
-#     )
-
-#   elif estado == "FINISHED":  # Partido finalizado.
-#     return (
-#       f"🏁 Finalizado\n"
-#       f"{partido['local']['nombre']} {partido['marcador']} {partido['visitante']['nombre']}\n\n"
-#     )
 
 def formatear_evento(evento, local, visitante):
   tipo = evento["event_type"]
@@ -187,4 +154,18 @@ def formatear_goleadores(goleadores):
       f"⚽️ {g['goles']} goles\n\n"
     )
 
+  return texto
+
+def formatear_equipo(equipo):
+  texto = (
+    f"<b>{equipo['nombre']}</b>\n\n"
+    f"🏟️ {equipo['estadio']}\n"
+    f"📍 {equipo['direccion']}\n"
+    f"📅 Fundación: {equipo['anio_fundacion']}\n"
+    f"🌍 Web: {equipo['sitio_web']}\n\n"
+    f"👔 Entrenador: {equipo['entrenador']}\n"
+    f"👥 Jugadores registrados: {equipo['cantidad_jugadores']}\n\n"
+    f"ℹ️ Más información sobre la plantilla: /plantel {equipo['nombre']}\n\n"
+  )
+  
   return texto

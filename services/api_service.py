@@ -118,3 +118,55 @@ class ApiService:
       })
     
     return goleadores
+  
+  async def obtener_equipos(self):
+    """
+    Devuelve lista de equipos de La Liga con id y nombre por cada uno de ellos.
+    """
+    url = f"{self._football_data_api_url_base}/competitions/{self._id_liga_football_data}/teams"
+    
+    headers = {
+      "X-Auth-Token": self._api_key_football_data,
+      "User-Agent": "FutBot/1.0"
+    }
+    
+    # Consultar:
+    async with aiohttp.ClientSession() as session:
+      async with session.get(url, headers=headers) as response:
+        data = await response.json()
+        
+    equipos_completo = data["teams"]
+    
+    equipos = []
+    for equipo in equipos_completo:
+      equipos.append({
+        "id": equipo["id"],
+        "nombre": equipo["name"]
+      })
+    
+    return equipos
+      
+  async def obtener_equipo(self, id_equipo):
+    url = f"{self._football_data_api_url_base}/teams/{id_equipo}"
+    
+    headers = {
+      "X-Auth-Token": self._api_key_football_data,
+      "User-Agent": "FutBot/1.0"
+    }
+    
+    # Consultar:
+    async with aiohttp.ClientSession() as session:
+      async with session.get(url, headers=headers) as response:
+        data = await response.json()
+    
+    equipo = {
+      "nombre": data["name"],
+      "direccion": data["address"],
+      "sitio_web": data["website"],
+      "anio_fundacion": data["founded"],
+      "estadio": data["venue"],
+      "entrenador": data["coach"]["name"],
+      "cantidad_jugadores": len(data["squad"])
+    }
+    
+    return equipo
