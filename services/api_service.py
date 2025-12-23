@@ -170,3 +170,54 @@ class ApiService:
     }
     
     return equipo
+
+  async def obtener_plantel(self, id_equipo):
+    url = f"{self._football_data_api_url_base}/teams/{id_equipo}"
+    
+    headers = {
+      "X-Auth-Token": self._api_key_football_data,
+      "User-Agent": "FutBot/1.0"
+    }
+    
+    async with aiohttp.ClientSession() as session:
+      async with session.get(url, headers=headers) as response:
+        data = await response.json()
+    
+    plantel = []
+    plantel_completo = data["squad"]
+    
+    for jugador in plantel_completo:
+      jugador = {
+        "nombre": jugador["name"],
+        "posicion": jugador["position"],
+        "fecha_nacimiento": jugador["dateOfBirth"],
+        "nacionalidad": jugador["nationality"]
+      }
+      
+      plantel.append(jugador)
+
+    return plantel
+  
+  async def obtener_entrenador(self, id_equipo):
+    url = f"{self._football_data_api_url_base}/teams/{id_equipo}"
+    
+    headers = {
+      "X-Auth-Token": self._api_key_football_data,
+      "User-Agent": "FutBot/1.0"
+    }
+    
+    async with aiohttp.ClientSession() as session:
+      async with session.get(url, headers=headers) as response:
+        data = await response.json()
+    
+    entrenador_completo = data["coach"]
+    
+    entrenador = {
+      "nombre": entrenador_completo["name"],
+      "fecha_nacimiento": entrenador_completo["dateOfBirth"],
+      "nacionalidad": entrenador_completo["nationality"],
+      "inicio_contrato": entrenador_completo['contract']['start'],
+      "fin_contrato": entrenador_completo['contract']['until']
+    }
+    
+    return entrenador

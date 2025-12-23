@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import pycountry
 
 def emoji_pos(pos):
   if pos <= 4:
@@ -165,7 +166,139 @@ def formatear_equipo(equipo):
     f"🌍 Web: {equipo['sitio_web']}\n\n"
     f"👔 Entrenador: {equipo['entrenador']}\n"
     f"👥 Jugadores registrados: {equipo['cantidad_jugadores']}\n\n"
-    f"ℹ️ Más información sobre la plantilla: /plantel {equipo['nombre']}\n\n"
   )
   
   return texto
+
+def formatear_fecha_nacimiento(fecha_iso: str) -> str:
+  try:
+    return datetime.strptime(fecha_iso, "%Y-%m-%d").strftime("%d/%m/%Y")
+  except Exception:
+    return fecha_iso
+
+def formatear_fecha_contrato(fecha_iso: str) -> str:
+  try:
+    return datetime.strptime(fecha_iso, "%Y-%m").strftime("%m/%Y")
+  except Exception:
+    return fecha_iso
+  
+def bandera_pais(nombre_pais: str) -> str:
+  try:
+    country = pycountry.countries.lookup(nombre_pais)
+    return "".join(chr(127397 + ord(c)) for c in country.alpha_2)
+  except LookupError:
+    return nombre_pais
+
+POSICIONES = {
+  # Arquero:
+  "Goalkeeper": "Arquero",
+
+  # Defensores:
+  "Defence": "Defensor",
+  "Centre-Back": "Defensor central",
+  "Left-Back": "Lateral izquierdo",
+  "Right-Back": "Lateral derecho",
+
+  # Mediocampo:
+  "Midfield": "Mediocampista",
+  "Central Midfield": "Volante central",
+  "Defensive Midfield": "Volante defensivo",
+  "Attacking Midfield": "Enganche",
+
+  # Delanteros:
+  "Offence": "Delantero",
+  "Centre-Forward": "Delantero centro",
+  "Second Striker": "Segundo delantero",
+  "Left Wing": "Extremo izquierdo",
+  "Right Wing": "Extremo derecho",
+  "Left Winger": "Extremo izquierdo",
+  "Right Winger": "Extremo derecho",
+}
+
+def traducir_posicion(posicion: str) -> str:
+  if not posicion:
+    return "—"
+  return POSICIONES.get(posicion, posicion)
+
+def formatear_jugador(jugador: dict) -> str:
+  nombre = jugador["nombre"]
+  posicion = traducir_posicion(jugador.get("posicion", ""))
+  nacimiento = formatear_fecha_nacimiento(jugador.get("fecha_nacimiento", ""))
+  pais = jugador.get("nacionalidad", "")
+  bandera = bandera_pais(pais)
+
+  return (
+    f"{bandera} <b>{nombre}</b>\n"
+    f"👕 {posicion}\n"
+    f"🎂 {nacimiento}\n"
+  )
+
+GRUPOS_POSICIONES = {
+  "🧤 ARQUEROS 🧤": {"Goalkeeper"},
+
+  "🛡️ DEFENSORES 🛡️": {
+    "Defence",
+    "Centre-Back",
+    "Left-Back",
+    "Right-Back",
+  },
+
+  "⚙️ MEDIOCAMPISTAS ⚙️": {
+    "Midfield",
+    "Central Midfield",
+    "Defensive Midfield",
+    "Attacking Midfield",
+  },
+
+  "🎯 DELANTEROS 🎯": {
+    "Offence",
+    "Centre-Forward",
+    "Second Striker",
+    "Left Wing",
+    "Right Wing",
+    "Left Winger",
+    "Right Winger",
+  },
+}
+
+def obtener_grupo_posicion(posicion: str) -> str:
+  for grupo, posiciones in GRUPOS_POSICIONES.items():
+    if posicion in posiciones:
+      return grupo
+  return "🧩 Otros"
+
+def formatear_plantel(plantel):
+  texto = "👥 <b>Plantel</b>\n\n"
+
+  grupos = {}
+
+  # Agrupar jugadores por posición:
+  for jugador in plantel:
+    posicion_raw = jugador.get("posicion", "")
+    grupo = obtener_grupo_posicion(posicion_raw)
+
+    grupos.setdefault(grupo, []).append(jugador)
+
+  # Renderizar por grupo:
+  for grupo, jugadores in grupos.items():
+    texto += f"<b>{grupo}</b>\n{'=' * 21}\n\n"
+
+    for jugador in jugadores:
+      texto += formatear_jugador(jugador) + "\n"
+
+  return texto
+
+def formatear_entrenador(entrenador: dict) -> str:
+  nombre = entrenador["nombre"]
+  nacimiento = formatear_fecha_nacimiento(entrenador.get("fecha_nacimiento", ""))
+  pais = entrenador.get("nacionalidad", "")
+  bandera = bandera_pais(pais)
+  inicio_contrato = formatear_fecha_contrato(entrenador.get("inicio_contrato", "N/A"))
+  fin_contrato = formatear_fecha_contrato(entrenador.get("fin_contrato", "N/A"))
+  contrato = f"{inicio_contrato} a {fin_contrato}"
+
+  return (
+    f"{bandera} <b>{nombre}</b>\n"
+    f"🎂 {nacimiento}\n"
+    f"📝 Contrato: {contrato}\n"
+  )

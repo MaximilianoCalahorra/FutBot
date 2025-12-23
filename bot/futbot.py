@@ -30,7 +30,9 @@ class FutBot:
     self._application.add_handler(CommandHandler("tabla", self._command_handler.tabla))
     self._application.add_handler(CommandHandler("goleadores", self._command_handler.goleadores))
     self._application.add_handler(CommandHandler("equipos", self._command_handler.equipos))
-    self._application.add_handler(CallbackQueryHandler(self._command_handler.equipos_callback, pattern="^equipo_"))
+    self._application.add_handler(CallbackQueryHandler(self._command_handler.equipo_callback, pattern="^equipo_seleccionar_"))
+    self._application.add_handler(CallbackQueryHandler(self._command_handler.equipo_plantel_callback, pattern="^equipo_plantel_"))
+    self._application.add_handler(CallbackQueryHandler(self._command_handler.equipo_entrenador_callback, pattern="^equipo_entrenador_"))
   
   def run(self):
     """

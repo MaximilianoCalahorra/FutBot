@@ -2,7 +2,7 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from services.api_service import ApiService
-from utils.formatters import formatear_clasificacion_tabla, formatear_partidos, formatear_goleadores, formatear_equipo
+from utils.formatters import formatear_clasificacion_tabla, formatear_partidos, formatear_goleadores, formatear_equipo, formatear_plantel, formatear_entrenador
 
 class CommandHandlerBot:
   """
@@ -93,7 +93,7 @@ class CommandHandlerBot:
         fila.append(
           InlineKeyboardButton(
             text=equipo["nombre"],  # Nombre del equipo.
-            callback_data=f"equipo_{equipo['id']}"  # Callback con el id del equipo.
+            callback_data=f"equipo_seleccionar_{equipo['id']}"  # Callback con el id del equipo.
           )
         )
 
@@ -116,17 +116,63 @@ class CommandHandlerBot:
     except Exception as e:
       await update.message.reply_text(f"❌ Error cargando equipos: {e}")
     
-  async def equipos_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+  async def equipo_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query  # Botón cliqueado.
     await query.answer()
 
-    id_equipo = query.data.replace("equipo_", "")  # Obtener id del equipo.
+    id_equipo = query.data.replace("equipo_seleccionar_", "")  # Obtener id del equipo.
 
     try:
       equipo = await self._api_service.obtener_equipo(id_equipo)  # Obtener equipo por su id.
       mensaje = formatear_equipo(equipo)  # Formatear mensaje con la información del equipo.
+      
+      # Botones de plantel y entrenador del equipo:
+      botonera = [
+        [
+          InlineKeyboardButton(
+            text="👥 Plantel",
+            callback_data=f"equipo_plantel_{id_equipo}"
+          ),
+          InlineKeyboardButton(
+            text="👔 Entrenador",
+            callback_data=f"equipo_entrenador_{id_equipo}"
+          )
+        ]
+      ]
+      
+      reply_markup = InlineKeyboardMarkup(botonera)
 
-      await query.message.reply_html(mensaje)
+      await query.message.reply_html(
+        mensaje,
+        reply_markup=reply_markup)
 
     except Exception as e:
       await query.message.reply_text(f"❌ Error obteniendo equipo: {e}")
+  
+  async def equipo_plantel_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    id_equipo = query.data.replace("equipo_plantel_", "")
+    
+    try:
+      plantel = await self._api_service.obtener_plantel(id_equipo)
+      mensaje = formatear_plantel(plantel)
+      
+      await query.message.reply_html(mensaje)
+    except Exception as e:
+      await query.message.reply_text(f"❌ Error obteniendo plantel: {e}")
+      
+  async def equipo_entrenador_callback(self, update: Update, contenxt: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    id_equipo = query.data.replace("equipo_entrenador_", "")
+    
+    try:
+      entrenador = await self._api_service.obtener_entrenador(id_equipo)
+      mensaje = formatear_entrenador(entrenador)
+      
+      await query.message.reply_html(mensaje)
+    except Exception as e:
+      await query.message.reply_text(f"❌ Error obteniendo entrenador: {e}")
