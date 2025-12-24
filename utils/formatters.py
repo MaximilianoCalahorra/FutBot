@@ -190,10 +190,10 @@ def bandera_pais(nombre_pais: str) -> str:
     return nombre_pais
 
 POSICIONES = {
-  # Arquero:
+  # Portería:
   "Goalkeeper": "Arquero",
 
-  # Defensores:
+  # Defensa:
   "Defence": "Defensor",
   "Centre-Back": "Defensor central",
   "Left-Back": "Lateral izquierdo",
@@ -205,7 +205,7 @@ POSICIONES = {
   "Defensive Midfield": "Volante defensivo",
   "Attacking Midfield": "Enganche",
 
-  # Delanteros:
+  # Delantera:
   "Offence": "Delantero",
   "Centre-Forward": "Delantero centro",
   "Second Striker": "Segundo delantero",
@@ -214,6 +214,15 @@ POSICIONES = {
   "Left Winger": "Extremo izquierdo",
   "Right Winger": "Extremo derecho",
 }
+
+GRUPOS_LABELS = {
+  "POR": "🧤 Arqueros",
+  "DEF": "🛡️ Defensores",
+  "MED": "⚙️ Mediocampistas",
+  "DEL": "🎯 Delanteros"
+}
+
+ORDEN_GRUPOS = ["POR", "DEF", "MED", "DEL"]
 
 def traducir_posicion(posicion: str) -> str:
   if not posicion:
@@ -233,58 +242,34 @@ def formatear_jugador(jugador: dict) -> str:
     f"🎂 {nacimiento}\n"
   )
 
-GRUPOS_POSICIONES = {
-  "🧤 ARQUEROS 🧤": {"Goalkeeper"},
+def obtener_grupo_posicion(posicion_raw: str) -> str:
+  if posicion_raw == "Goalkeeper":
+    return "POR"
+  if posicion_raw in ["Centre-Back", "Left-Back", "Right-Back", "Defence"]:
+    return "DEF"
+  if posicion_raw in ["Midfield", "Central Midfield", "Defensive Midfield", "Attacking Midfield"]:
+    return "MED"
+  return "DEL"
 
-  "🛡️ DEFENSORES 🛡️": {
-    "Defence",
-    "Centre-Back",
-    "Left-Back",
-    "Right-Back",
-  },
-
-  "⚙️ MEDIOCAMPISTAS ⚙️": {
-    "Midfield",
-    "Central Midfield",
-    "Defensive Midfield",
-    "Attacking Midfield",
-  },
-
-  "🎯 DELANTEROS 🎯": {
-    "Offence",
-    "Centre-Forward",
-    "Second Striker",
-    "Left Wing",
-    "Right Wing",
-    "Left Winger",
-    "Right Winger",
-  },
-}
-
-def obtener_grupo_posicion(posicion: str) -> str:
-  for grupo, posiciones in GRUPOS_POSICIONES.items():
-    if posicion in posiciones:
-      return grupo
-  return "🧩 Otros"
-
-def formatear_plantel(plantel):
-  texto = "👥 <b>Plantel</b>\n\n"
-
+def agrupar_plantel_por_posicion(plantel):
   grupos = {}
 
-  # Agrupar jugadores por posición:
   for jugador in plantel:
-    posicion_raw = jugador.get("posicion", "")
-    grupo = obtener_grupo_posicion(posicion_raw)
+    clave = obtener_grupo_posicion(jugador.get("posicion", ""))
+    grupos.setdefault(clave, []).append(jugador)
 
-    grupos.setdefault(grupo, []).append(jugador)
+  resultado = []
+  for clave in ORDEN_GRUPOS:
+    if clave in grupos:
+      resultado.append((GRUPOS_LABELS[clave], grupos[clave]))
 
-  # Renderizar por grupo:
-  for grupo, jugadores in grupos.items():
-    texto += f"<b>{grupo}</b>\n{'=' * 21}\n\n"
+  return resultado
 
-    for jugador in jugadores:
-      texto += formatear_jugador(jugador) + "\n"
+def formatear_grupo_plantel(grupo, jugadores):
+  texto = f"<b>{grupo}</b>\n\n"
+
+  for jugador in jugadores:
+    texto += formatear_jugador(jugador) + "\n"
 
   return texto
 

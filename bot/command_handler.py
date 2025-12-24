@@ -2,7 +2,7 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from services.api_service import ApiService
-from utils.formatters import formatear_clasificacion_tabla, formatear_partidos, formatear_goleadores, formatear_equipo, formatear_plantel, formatear_entrenador
+from utils.formatters import formatear_clasificacion_tabla, formatear_partidos, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel
 
 class CommandHandlerBot:
   """
@@ -131,7 +131,7 @@ class CommandHandlerBot:
         [
           InlineKeyboardButton(
             text="👥 Plantel",
-            callback_data=f"equipo_plantel_{id_equipo}"
+            callback_data=f"equipo_plantel_{id_equipo}_0"
           ),
           InlineKeyboardButton(
             text="👔 Entrenador",
@@ -149,20 +149,39 @@ class CommandHandlerBot:
     except Exception as e:
       await query.message.reply_text(f"❌ Error obteniendo equipo: {e}")
   
-  async def equipo_plantel_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+  async def equipo_plantel_callback(self, update: Update, contenxt: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
+    _, _, id_equipo, index = query.data.split("_")
+    index = int(index)
+
+    plantel = await self._api_service.obtener_plantel(id_equipo)
+    grupos = agrupar_plantel_por_posicion(plantel)
     
-    id_equipo = query.data.replace("equipo_plantel_", "")
-    
-    try:
-      plantel = await self._api_service.obtener_plantel(id_equipo)
-      mensaje = formatear_plantel(plantel)
-      
-      await query.message.reply_html(mensaje)
-    except Exception as e:
-      await query.message.reply_text(f"❌ Error obteniendo plantel: {e}")
-      
+    if index < 0 or index >= len(grupos):
+      await query.message.reply_text("❌ No hay más posiciones para mostrar.")
+      return
+
+    grupo, jugadores = grupos[index]
+    texto = formatear_grupo_plantel(grupo, jugadores)
+
+    botones = []
+
+    if index > 0:
+      botones.append(
+        InlineKeyboardButton("⬅️", callback_data=f"equipo_plantel_{id_equipo}_{index-1}")
+      )
+
+    if index < len(grupos) - 1:
+      botones.append(
+        InlineKeyboardButton("➡️", callback_data=f"equipo_plantel_{id_equipo}_{index+1}")
+      )
+
+    reply_markup = InlineKeyboardMarkup([botones])
+
+    await query.message.edit_text(texto, reply_markup=reply_markup, parse_mode="HTML")
+
   async def equipo_entrenador_callback(self, update: Update, contenxt: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
