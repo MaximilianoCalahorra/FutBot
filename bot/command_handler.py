@@ -25,7 +25,8 @@ class CommandHandlerBot:
       "Puedo informarte sobre:\n"
       "📅 <b>Partidos del día</b>\n"
       "📊 <b>Tabla de posiciones</b>\n"
-      "🥅 <b>Goleadores</b>\n\n"
+      "🥅 <b>Goleadores</b>\n"
+      "🛡️ <b>Equipos</b>\n\n"
       "Escribí /ayuda para ver todos los comandos disponibles ⚙️"
     )
 
@@ -38,8 +39,8 @@ class CommandHandlerBot:
       "🤖 <b>/start</b> — Te da la bienvenida y explica qué puede hacer FutBot.\n"
       "📅 <b>/hoy</b> — Muestra los <b>partidos del día</b> (con hora y equipos).\n"
       "📊 <b>/tabla</b> — Muestra la <b>tabla de posiciones</b> actualizada.\n"
-      "📈 <b>/goleadores</b> — Muestra el <b>top 10</b> de goleadores.\n\n"
-      "⚙️ Próximamente agregaré más funciones, como consultar equipos o jugadores específicos 👀"
+      "📈 <b>/goleadores</b> — Muestra el <b>top 10</b> de goleadores.\n"
+      "🛡️ <b>/equipos</b> — Muestra información general del club y permite acceder a mayor detalle sobre el plantel y el entrenador mediante botones.\n\n"
     )
 
   async def hoy(self, update: Update, context: ContextTypes.DEFAULT_TYPE):

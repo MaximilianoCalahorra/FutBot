@@ -79,6 +79,9 @@ def formatear_evento(evento, local, visitante):
 
     case "penalty_goal":
       return f"{minuto}' ⚽️ (P) {jugador} ({equipo})\n"
+    
+    case "own_goal":
+      return f"{minuto}' ⚽️ (EC) {jugador} ({equipo})\n"
 
     case "yellow_card":
       return f"{minuto}' 🟨 {jugador} ({equipo})\n"
