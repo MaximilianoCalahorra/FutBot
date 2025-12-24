@@ -149,7 +149,7 @@ class CommandHandlerBot:
     except Exception as e:
       await query.message.reply_text(f"❌ Error obteniendo equipo: {e}")
   
-  async def equipo_plantel_callback(self, update: Update, contenxt: ContextTypes.DEFAULT_TYPE):
+  async def equipo_plantel_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
@@ -180,7 +180,24 @@ class CommandHandlerBot:
 
     reply_markup = InlineKeyboardMarkup([botones])
 
-    await query.message.edit_text(texto, reply_markup=reply_markup, parse_mode="HTML")
+    plantel_msg_id = context.user_data.get("plantel_message_id")
+
+    # Si todavía no hubo un mensaje sobre el plantel:
+    if plantel_msg_id is None:
+      sent = await query.message.reply_html(
+        texto,
+        reply_markup=reply_markup
+      )
+      context.user_data["plantel_message_id"] = sent.message_id  # Generamos un nuevo mensaje con el contenido.
+    else:  # Si ya hubo al menos un mensaje:
+      # Editamos el mensaje con el nuevo contenido:
+      await context.bot.edit_message_text(
+        chat_id=query.message.chat_id,
+        message_id=plantel_msg_id,
+        text=texto,
+        reply_markup=reply_markup,
+        parse_mode="HTML"
+      )
 
   async def equipo_entrenador_callback(self, update: Update, contenxt: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
