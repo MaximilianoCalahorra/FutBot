@@ -2,7 +2,7 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from services.api_service import ApiService
-from utils.formatters import formatear_clasificacion_tabla, formatear_partidos, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel
+from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel
 
 class CommandHandlerBot:
   """
@@ -48,12 +48,83 @@ class CommandHandlerBot:
     Responde al comando /hoy.
     """
     try:
-      partidos = await self._api_service.obtener_partidos_hoy()
-      mensaje = formatear_partidos(partidos)
-      await update.message.reply_html(mensaje)
+      # Armado de la botonera:
+      botonera = []
+      textos = ["🕒 Programados", "⏳ En juego", "🏁 Finalizados"]
+      callbacks = ["hoy_partidos_pre-match_0", "hoy_partidos_live_0", "hoy_partidos_finished_0"]
+      
+      for i in range(len(textos)):
+        botonera.append([
+          InlineKeyboardButton(
+            text=textos[i],
+            callback_data=callbacks[i]
+          )
+        ])
+      
+      reply_markup = InlineKeyboardMarkup(botonera)
+      
+      await update.message.reply_text(
+        "⚽ Seleccioná un estado de los partidos:",
+        reply_markup=reply_markup
+      )
+      
     except Exception as e:
       await update.message.reply_text(f"❌ Error obteniendo los partidos de hoy: {e}")
 
+  async def hoy_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query  # Botón cliqueado.
+    await query.answer()
+    
+    _, _, estado_partido, index = query.data.split("_")  # Obtener estado de los partidos solicitado y página de partido.
+    index = int(index)
+    
+    partidos = await self._api_service.obtener_partidos_hoy(estado_partido)  # Partidos en ese estado.
+    
+    # Si no hay partidos:
+    if len(partidos) == 0:
+      await query.message.reply_text("❌ No hay partidos para mostrar.")
+      return
+    
+    if index < 0 or index >= len(partidos):
+      await query.message.reply_text("❌ No hay más partidos para mostrar.")
+      return
+      
+    texto = formatear_partido(partidos[index])  # Formateado del partido de la página actual.
+    
+    # Botonera para avanzar/retroceder a través de las páginas:
+    botones = []
+    
+    if index > 0:
+      botones.append(
+        InlineKeyboardButton("⬅️", callback_data=f"hoy_partidos_{estado_partido}_{index - 1}")
+      )
+    
+    if index < len(partidos) - 1:
+      botones.append(
+        InlineKeyboardButton("➡️", callback_data=f"hoy_partidos_{estado_partido}_{index + 1}")
+      )
+    
+    reply_markup = InlineKeyboardMarkup([botones])
+    
+    hoy_partidos_msg_id = context.user_data.get("hoy_partidos_message_id")
+    
+    # Si todavía no hubo un mensaje sobre los partidos:
+    if hoy_partidos_msg_id is None:
+      sent = await query.message.reply_html(
+        texto,
+        reply_markup=reply_markup
+      )
+      context.user_data["hoy_partidos_message_id"] = sent.message_id  # Generamos un nuevo mensaje con el contenido.
+    else: # Si ya hubo al menos un mensaje:
+      # Editamos el mensaje con el nuevo contenido:
+      await context.bot.edit_message_text(
+        chat_id=query.message.chat_id,
+        message_id=hoy_partidos_msg_id,
+        text=texto,
+        reply_markup=reply_markup,
+        parse_mode="HTML"
+      )
+  
   async def tabla(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Responde al comando /tabla.
