@@ -51,7 +51,7 @@ class ApiService:
       
     return clasificacion
   
-  async def obtener_partidos_hoy(self):
+  async def obtener_partidos_hoy(self, estado_partido):
     hoy = datetime.today().strftime("%d-%m-%Y")  # Fecha de hoy.
     url = f"https://api.soccerdataapi.com/matches/?league_id={self._id_liga_soccerdata}&date={hoy}&auth_token={self._api_key_soccerdata}"
     
@@ -72,21 +72,22 @@ class ApiService:
       marcador_visitante = partido["goals"]["away_ft_goals"]
       eventos = partido["events"]
       
-      if estado == "pre-match":
-        marcador = "vs"
-      else:
-        marcador = f"{marcador_local} - {marcador_visitante}"
-      
-      partidos.append({
-        "fecha": fecha,
-        "hora": hora,
-        "estado": estado,
-        "minutos": minutos,
-        "local": equipo_local,
-        "visitante": equipo_visitante,
-        "marcador": marcador,
-        "eventos": eventos
-      })
+      if partido["status"] == estado_partido:
+        if estado == "pre-match":
+          marcador = "vs"
+        else:
+          marcador = f"{marcador_local} - {marcador_visitante}"
+        
+        partidos.append({
+          "fecha": fecha,
+          "hora": hora,
+          "estado": estado,
+          "minutos": minutos,
+          "local": equipo_local,
+          "visitante": equipo_visitante,
+          "marcador": marcador,
+          "eventos": eventos
+        })
       
     return partidos
     
