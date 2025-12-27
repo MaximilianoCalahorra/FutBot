@@ -86,9 +86,11 @@ El comando `/hoy` muestra los partidos de La Liga correspondientes al día actua
 
 1. El usuario ejecuta el comando: `/hoy`
 
-2. El bot obtiene los partidos del día desde la API.
+2. El bot permite seleccionar al usuario el estado de los partidos que quiere consultar, siendo las opciones: programados, en juego o finalizados.
 
-3. Para cada partido, el bot muestra información según su estado:
+3. El bot obtiene los partidos del día que se encuentren en el estado indicado desde la API.
+
+4. Para cada partido, el bot muestra información según su estado:
 
     - 🕒 **Partido a futuro**: fecha, hora y equipos.
 
@@ -96,7 +98,7 @@ El comando `/hoy` muestra los partidos de La Liga correspondientes al día actua
 
     - 🏁 **Partido finalizado**: resultado final y eventos destacados.
 
-4. En partidos en juego o finalizados, se incluyen eventos como:
+5. En partidos en juego o finalizados, se incluyen eventos como:
 
     - ⚽️ Gol
 
