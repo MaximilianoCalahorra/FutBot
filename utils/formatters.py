@@ -334,3 +334,20 @@ def formatear_racha(racha, id_equipo):
     )
 
   return texto
+
+def formatear_proximos_partidos(partidos, id_equipo):
+  texto = "<b>🗓️ Próximos 5 partidos</b>\n\n"
+  
+  for partido in partidos:
+    localia = "✈️"
+    if partido["local"]["id"] == int(id_equipo):
+      localia = "🏠"
+    
+    texto += (
+      f"{localia} <b>{partido['fecha']} {partido['hora']}</b> · Jornada {partido['jornada']}\n"
+      f"{partido['local']['nombre']} vs {partido['visitante']['nombre']}\n\n"
+    )
+  
+  return texto
+  
+  
