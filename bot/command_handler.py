@@ -40,7 +40,7 @@ class CommandHandlerBot:
       "📅 <b>/hoy</b> — Muestra los <b>partidos del día</b> (con hora y equipos).\n"
       "📊 <b>/tabla</b> — Muestra la <b>tabla de posiciones</b> actualizada.\n"
       "📈 <b>/goleadores</b> — Muestra el <b>top 10</b> de goleadores.\n"
-      "🛡️ <b>/equipos</b> — Muestra información general del club y permite acceder a mayor detalle sobre el plantel y el entrenador mediante botones.\n\n"
+      "🛡️ <b>/equipos</b> — Muestra información general del club y permite acceder a mayor detalle sobre el plantel, el entrenador, racha del equipo y próximos encuentros mediante botones.\n\n"
     )
 
   async def hoy(self, update: Update, context: ContextTypes.DEFAULT_TYPE):

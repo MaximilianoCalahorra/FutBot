@@ -197,6 +197,10 @@ de forma interactiva mediante **botoneras y navegación por callbacks**.
 
     - 👔 Entrenador
 
+    - ⚡ Racha
+
+    - 🗓️ Próximos partidos
+
 ---
 
 ### 👥 Plantel
@@ -237,6 +241,38 @@ Muestra información específica del entrenador del equipo:
 - Nacionalidad (con bandera o nombre)
 
 - Duración del contrato
+
+---
+
+### ⚡ Racha
+
+Muestra información sobre los últimos 5 encuentros que disputó el equipo en la competencia:
+
+- Resultado del partido
+
+- Fecha
+
+- Número de jornada
+
+- Situación de localía
+
+- Equipos que disputaron el encuentro
+
+---
+
+### 🗓️ Próximos partidos
+
+Muestra información sobre los próximos 5 encuentros que el equipo debe disputar en la competencia:
+
+- Situación de localía
+
+- Fecha y hora
+
+- Número de jornada
+
+- Equipos que participarán del encuentro
+
+---
 
 ## 🌐 APIs utilizadas
 
@@ -357,6 +393,7 @@ application.run_polling()
 python-telegram-bot==21.4
 aiohttp==3.9.5
 python-dotenv==1.0.1
+pycountry==24.6.1
 ```
 
 | Paquete               | Uso                                         |
