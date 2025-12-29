@@ -222,3 +222,53 @@ class ApiService:
     }
     
     return entrenador
+  
+  async def obtener_racha(self, id_equipo):
+    url = f"{self._football_data_api_url_base}/teams/{id_equipo}/matches"
+    
+    headers = {
+      "X-Auth-Token": self._api_key_football_data,
+      "User-Agent": "FutBot/1.0"
+    }
+    
+    async with aiohttp.ClientSession() as session:
+      async with session.get(url, headers=headers) as response:
+        data = await response.json()
+        
+    todos_partidos = data["matches"]  # Todos los partidos del equipo en la temporada.
+    
+    partidos_jugados_liga = []
+    for partido in todos_partidos:
+      estado = partido["status"]
+      competencia = partido["competition"]["code"]
+      
+      # Solo me interesan los partidos de liga que hayan finalizado:
+      if estado == "FINISHED" and competencia == self._id_liga_football_data:
+        partidos_jugados_liga.append(partido)
+
+    racha = []
+    # De esos partidos de liga finalizados me quedo con los últimos 5:
+    for partido in reversed(partidos_jugados_liga[-5:]):
+      fecha, hora = convertir_a_zona_horaria_argentina(partido["utcDate"])
+      
+      # Información de cada partido:
+      partido_racha = {
+        "fecha": fecha,
+        "hora": hora,
+        "jornada": partido["matchday"],
+        "local": {
+          "id": partido["homeTeam"]["id"],
+          "nombre": partido["homeTeam"]["name"],
+          "goles": partido["score"]["fullTime"]["home"]
+        },
+        "visitante": {
+          "id": partido["awayTeam"]["id"],
+          "nombre": partido["awayTeam"]["name"],
+          "goles": partido["score"]["fullTime"]["away"]
+        },
+        "ganador": partido["score"]["winner"]
+      }
+      
+      racha.append(partido_racha)
+    
+    return racha

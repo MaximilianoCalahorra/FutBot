@@ -2,7 +2,7 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from services.api_service import ApiService
-from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel
+from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha
 
 class CommandHandlerBot:
   """
@@ -208,6 +208,10 @@ class CommandHandlerBot:
           InlineKeyboardButton(
             text="👔 Entrenador",
             callback_data=f"equipo_entrenador_{id_equipo}"
+          ),
+          InlineKeyboardButton(
+            text="⚡ Racha",
+            callback_data=f"equipo_racha_{id_equipo}"
           )
         ]
       ]
@@ -284,3 +288,17 @@ class CommandHandlerBot:
       await query.message.reply_html(mensaje)
     except Exception as e:
       await query.message.reply_text(f"❌ Error obteniendo entrenador: {e}")
+      
+  async def equipo_racha_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    id_equipo = query.data.replace("equipo_racha_", "")
+    
+    try:
+      racha = await self._api_service.obtener_racha(id_equipo)
+      mensaje = formatear_racha(racha, id_equipo)
+      
+      await query.message.reply_html(mensaje)
+    except Exception as e:
+      await query.message.reply_text(f"❌ Error obteniendo racha: {e}")

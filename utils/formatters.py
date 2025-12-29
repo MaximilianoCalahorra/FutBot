@@ -33,28 +33,40 @@ def formatear_clasificacion_tabla(clasificacion):
   
   return texto
 
-def convertir_a_zona_horaria_argentina(date_str, time_str):
-  """
-  Convierte la fecha y hora entregada por la API (en UTC)
-  al horario de Argentina (UTC-3).
-  Recibe:
-    date_str -> "26/10/2025"
-    time_str -> "15:15"
-  Devuelve:
-    (fecha_arg, hora_arg) con formato dd/mm/YYYY y HH:MM
-  """
+from datetime import datetime, timedelta
 
-  # La API entrega día/mes/año → hay que parsearlo así:
-  dt_utc = datetime.strptime(f"{date_str} {time_str}", "%d/%m/%Y %H:%M")
+def convertir_a_zona_horaria_argentina(date_str, time_str=None):
+    """
+    Convierte fechas en UTC a horario de Argentina (UTC-3).
 
-  # Convertir de UTC a UTC-3:
-  dt_arg = dt_utc - timedelta(hours=3)
+    Acepta:
+    - date_str="26/10/2025", time_str="15:15"
+    - date_str="2025-11-09T15:15:00Z", time_str=None
 
-  # Devolver por separado:
-  fecha = dt_arg.strftime("%d/%m/%Y")
-  hora = dt_arg.strftime("%H:%M")
+    Devuelve:
+    (fecha_arg, hora_arg) → ("dd/mm/YYYY", "HH:MM")
+    """
 
-  return fecha, hora
+    if time_str:
+        # Formato: dd/mm/YYYY + HH:MM
+        dt_utc = datetime.strptime(
+            f"{date_str} {time_str}",
+            "%d/%m/%Y %H:%M"
+        )
+    else:
+        # Formato ISO 8601: 2025-11-09T15:15:00Z
+        dt_utc = datetime.strptime(
+            date_str,
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
+
+    # Convertir de UTC a UTC-3
+    dt_arg = dt_utc - timedelta(hours=3)
+
+    fecha = dt_arg.strftime("%d/%m/%Y")
+    hora = dt_arg.strftime("%H:%M")
+
+    return fecha, hora
 
 def formatear_evento(evento, local, visitante):
   tipo = evento["event_type"]
@@ -290,3 +302,35 @@ def formatear_entrenador(entrenador: dict) -> str:
     f"🎂 {nacimiento}\n"
     f"📝 Contrato: {contrato}\n"
   )
+
+def obtener_resultado(partido, id_equipo):
+  if partido["ganador"] == "DRAW":
+    return "➖"
+
+  es_local = partido["local"]["id"] == int(id_equipo)
+  gano_local = partido["ganador"] == "HOME_TEAM"
+  
+  if es_local and gano_local:
+    return "✅"
+  
+  if not es_local and not gano_local:
+    return "✅"
+
+  return "❌" 
+
+def formatear_racha(racha, id_equipo):
+  texto = "⚡ <b>Últimos 5 partidos</b>\n\n"
+
+  for partido in racha:
+    resultado = obtener_resultado(partido, id_equipo)
+    localia = "✈️"
+    if partido["local"]["id"] == int(id_equipo):
+      localia = "🏠"
+    
+    texto += (
+      f"{resultado} <b>{partido['fecha']}</b> · Jornada {partido['jornada']} {localia}\n"
+      f"{partido['local']['nombre']} {partido['local']['goles']} "
+      f"- {partido['visitante']['goles']} {partido['visitante']['nombre']}\n\n"
+    )
+
+  return texto
