@@ -1,8 +1,9 @@
 # from telegram import Update
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
+from datetime import date, timedelta
 from services.api_service import ApiService
-from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha, formatear_proximos_partidos
+from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_partidos, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha, formatear_proximos_partidos
 
 class CommandHandlerBot:
   """
@@ -23,7 +24,7 @@ class CommandHandlerBot:
     await update.message.reply_html(
       f"¡Hola {user.mention_html()}! 👋 Soy <b>FutBot</b>, tu asistente especializado en fútbol ⚽.\n\n"
       "Puedo informarte sobre:\n"
-      "📅 <b>Partidos del día</b>\n"
+      "📅 <b>Partidos del día y del siguiente</b>\n"
       "📊 <b>Tabla de posiciones</b>\n"
       "🥅 <b>Goleadores</b>\n"
       "🛡️ <b>Equipos</b>\n\n"
@@ -38,6 +39,7 @@ class CommandHandlerBot:
       "📖 <b>Comandos disponibles</b>\n\n"
       "🤖 <b>/start</b> — Te da la bienvenida y explica qué puede hacer FutBot.\n"
       "📅 <b>/hoy</b> — Muestra los <b>partidos del día</b> (con hora y equipos).\n"
+      "📅 <b>/maniana</b> — Muestra los <b>partidos del día siguiente</b> (con hora y equipos).\n"
       "📊 <b>/tabla</b> — Muestra la <b>tabla de posiciones</b> actualizada.\n"
       "📈 <b>/goleadores</b> — Muestra el <b>top 10</b> de goleadores.\n"
       "🛡️ <b>/equipos</b> — Muestra información general del club y permite acceder a mayor detalle sobre el plantel, el entrenador, racha del equipo y próximos encuentros mediante botones.\n\n"
@@ -78,7 +80,8 @@ class CommandHandlerBot:
     _, _, estado_partido, index = query.data.split("_")  # Obtener estado de los partidos solicitado y página de partido.
     index = int(index)
     
-    partidos = await self._api_service.obtener_partidos_hoy(estado_partido)  # Partidos en ese estado.
+    hoy = date.today().strftime("%d-%m-%Y")  # Fecha de hoy.
+    partidos = await self._api_service.obtener_partidos_estado_y_fecha(estado_partido, hoy)  # Partidos en ese estado.
     
     # Si no hay partidos:
     if len(partidos) == 0:
@@ -125,6 +128,22 @@ class CommandHandlerBot:
         parse_mode="HTML"
       )
   
+  async def maniana(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Responde al comando /maniana.
+    """
+    try:
+      estado_partidos = "pre-match"
+      
+      maniana = (date.today() + timedelta(days=1)).strftime("%d-%m-%Y")  # Fecha de mañana.
+      partidos = await self._api_service.obtener_partidos_estado_y_fecha(estado_partidos, maniana)  # Partidos en ese estado.
+      
+      texto = formatear_partidos(partidos)  # Formateado de los partidos.
+      await update.message.reply_html(texto)
+      
+    except Exception as e:
+      await update.message.reply_text(f"❌ Error obteniendo los partidos de mañana: {e}")
+    
   async def tabla(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Responde al comando /tabla.

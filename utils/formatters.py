@@ -146,7 +146,7 @@ def formatear_partido(partido):
 
 def formatear_partidos(partidos):
   if not partidos:
-    return "❌ No hay partidos programados para hoy."
+    return "❌ No hay partidos programados."
 
   # Todos los partidos deberían tener misma fecha
   fecha = partidos[0]["fecha"]
@@ -349,5 +349,3 @@ def formatear_proximos_partidos(partidos, id_equipo):
     )
   
   return texto
-  
-  
