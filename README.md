@@ -116,6 +116,20 @@ El formato se adapta dinámicamente según el estado del partido.
 
 ---
 
+### 📅 Comando `/maniana`
+
+El comando `/maniana` muestra los partidos de La Liga correspondientes al día siguiente.
+
+🔹 **Flujo de uso**
+
+1. El usuario ejecuta el comando: `/maniana`
+
+2. El bot obtiene los partidos del día desde la API.
+
+3. Para cada partido, el bot muestra fecha, hora y equipos.
+
+---
+
 ### 🏆 Comando `/tabla`
 
 El comando `/tabla` muestra la tabla de posiciones actualizada de La Liga.
