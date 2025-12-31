@@ -1,5 +1,4 @@
 import aiohttp
-from datetime import datetime
 from utils.formatters import convertir_a_zona_horaria_argentina
 
 class ApiService:
@@ -51,9 +50,8 @@ class ApiService:
       
     return clasificacion
   
-  async def obtener_partidos_hoy(self, estado_partido):
-    hoy = datetime.today().strftime("%d-%m-%Y")  # Fecha de hoy.
-    url = f"https://api.soccerdataapi.com/matches/?league_id={self._id_liga_soccerdata}&date={hoy}&auth_token={self._api_key_soccerdata}"
+  async def obtener_partidos_estado_y_fecha(self, estado_partido, fecha):
+    url = f"https://api.soccerdataapi.com/matches/?league_id={self._id_liga_soccerdata}&date={fecha}&auth_token={self._api_key_soccerdata}"
     
     async with aiohttp.ClientSession() as session:
       async with session.get(url) as response:
@@ -89,7 +87,7 @@ class ApiService:
           "eventos": eventos
         })
       
-    return partidos
+    return partidos  
     
   async def obtener_goleadores(self):
     url = f"{self._football_data_api_url_base}/competitions/{self._id_liga_football_data}/scorers"
