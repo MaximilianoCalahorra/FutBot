@@ -69,69 +69,104 @@ def convertir_a_zona_horaria_argentina(date_str, time_str=None):
     return fecha, hora
 
 def formatear_evento(evento, local, visitante):
+  if not evento:
+    return ""
+
   tipo = evento["event_type"]
   minuto = evento.get("event_minute", "?")
   jugador = evento.get("player", {}).get("name", "Jugador desconocido")
-  if evento["team"] == "home":
-    equipo = local
-  else:
-    equipo = visitante
+
+  equipo = None
+
+  # Solo asignamos equipo si existen:
+  if local and visitante:
+    if evento.get("team") == "home":
+      equipo = local
+    elif evento.get("team") == "away":
+      equipo = visitante
+
+  # Texto del equipo (si existe):
+  texto_equipo = f"({equipo})" if equipo else ""
 
   match tipo:
     case "goal":
       asistencia = evento.get("assist_player") or {}
       asistidor = asistencia.get("name", "")
 
-      if asistidor != "":
+      if asistidor:
         texto_asistidor = f"👟 {asistidor}\n"
       else:
-        texto_asistidor = asistidor
+        texto_asistidor = ""
 
-      return f"{minuto}' ⚽️ {jugador}\n{texto_asistidor}({equipo})\n"
+      return (
+        f"{minuto}' ⚽️ {jugador}\n"
+        f"{texto_asistidor}"
+        f"{texto_equipo}\n"
+      )
 
     case "penalty_goal":
-      return f"{minuto}' ⚽️ (P) {jugador} ({equipo})\n"
-    
+      return f"{minuto}' ⚽️ (P) {jugador} {texto_equipo}\n"
+
     case "own_goal":
-      return f"{minuto}' ⚽️ (EC) {jugador} ({equipo})\n"
+      return f"{minuto}' ⚽️ (EC) {jugador} {texto_equipo}\n"
 
     case "yellow_card":
-      return f"{minuto}' 🟨 {jugador} ({equipo})\n"
+      return f"{minuto}' 🟨 {jugador} {texto_equipo}\n"
 
     case "red_card":
-      return f"{minuto}' 🟥 {jugador} ({equipo})\n"
+      return f"{minuto}' 🟥 {jugador} {texto_equipo}\n"
 
     case "yellow_red_card":
-      return f"{minuto}' 🟨 🟥 {jugador} ({equipo})\n"
+      return f"{minuto}' 🟨 🟥 {jugador} {texto_equipo}\n"
 
     case "substitution":
       out_p = evento.get("player_out", {}).get("name", "Jugador OUT")
       in_p = evento.get("player_in", {}).get("name", "Jugador IN")
-      return f"{minuto}' 🔄 ({equipo})\n⬆️ {in_p}\n⬇️ {out_p}\n"
+
+      return (
+        f"{minuto}' 🔄 {texto_equipo}\n"
+        f"⬆️ {in_p}\n"
+        f"⬇️ {out_p}\n"
+      )
 
     case _:
       return f"{minuto}' Evento desconocido: {tipo}\n"
 
 def formatear_eventos(eventos, local, visitante):
-  return "\n".join(formatear_evento(e, local, visitante) for e in eventos)
+  if len(eventos) > 0:
+    return "\n".join(formatear_evento(e, local, visitante) for e in eventos)
+  return "\n"
 
 def formatear_partido(partido):
   estado = partido["estado"]
   eventos = partido["eventos"]
   local = partido["local"]
   visitante = partido["visitante"]
+  fecha = partido["fecha"]
+  hora = partido["hora"]
+  
+  # Manejo del caso en que los eventos no se puedan asociar con seguridad a cada equipo:
+  local_eventos = None
+  visitante_eventos = None
+  flag_eventos_sin_equipo = partido.get("flag_eventos_sin_equipo", "NO")
+  
+  # En caso de que no se encuentre el flag cargado en el partido, sí cargamos el nombre del local o del visitante en cada evento, según corresponda:
+  if flag_eventos_sin_equipo == "NO":
+    local_eventos = local
+    visitante_eventos = visitante
  
-  eventos_formateados = formatear_eventos(eventos, local, visitante) if eventos else ""
+  eventos_formateados = formatear_eventos(eventos, local_eventos, visitante_eventos) if eventos else ""
 
   # Según el estado del partido lo mostramos de diferente manera:
   if estado == "pre-match":  # Partido a futuro.
     return (
-      f"🕒 {partido['fecha']} {partido['hora']}\n"
+      f"🕒 {fecha} {hora}\n"
       f"{local} vs {visitante}\n\n"
     )
 
   elif estado == "live":  # Partido en juego.
     return (
+      f"🕒 {fecha} {hora}\n"
       f"⏳ En juego\n"
       f"{local} {partido['marcador']} {visitante}\n"
       f"\n📌 Eventos:\n{eventos_formateados}\n\n"
@@ -139,9 +174,17 @@ def formatear_partido(partido):
 
   elif estado == "finished":  # Partido finalizado.
     return (
+      f"🕒 {fecha} {hora}\n"
       f"🏁 Finalizado\n"
       f"{local} {partido['marcador']} {visitante}\n"
       f"\n📌 Eventos:\n{eventos_formateados}\n\n"
+    )
+  
+  elif estado == "postponed":  # Partido pospuesto.
+    return (
+      f"🕒 {fecha} {hora}\n"
+      f"📅 ➡️ ⚽ Pospuesto\n"
+      f"{local} vs {visitante}\n\n"
     )
 
 def formatear_partidos(partidos):
@@ -349,3 +392,29 @@ def formatear_proximos_partidos(partidos, id_equipo):
     )
   
   return texto
+
+def normalizar_estado_partido(estado, api_origen):
+  if api_origen == "soccerdata":
+    if estado == "prematch":
+      estado = "TIMED"
+    elif estado == "live":
+      estado = "IN_PLAY"
+    elif estado == "finished":
+      estado = "FINISHED"
+    elif estado == "postponed":
+      estado = "POSTPONED"
+    elif estado == "PAUSED":
+      estado = "halftime"
+  elif api_origen == "football_data":
+    if estado in ("TIMED", "SCHEDULED"):
+        estado = "pre-match"
+    elif estado == "IN_PLAY":
+      estado = "live"
+    elif estado == "FINISHED":
+      estado = "finished"
+    elif estado == "POSTPONED":
+      estado = "postponed"
+    elif estado == "halftime":
+      estado = "PAUSED"
+
+  return estado

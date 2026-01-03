@@ -1,5 +1,6 @@
 import aiohttp
-from utils.formatters import convertir_a_zona_horaria_argentina
+from utils.formatters import convertir_a_zona_horaria_argentina, normalizar_estado_partido
+from utils.teams import normalizar_equipo, TEAMS
 
 class ApiService:
   def __init__(self, config):
@@ -87,7 +88,7 @@ class ApiService:
           "eventos": eventos
         })
       
-    return partidos  
+    return partidos   
     
   async def obtener_goleadores(self):
     url = f"{self._football_data_api_url_base}/competitions/{self._id_liga_football_data}/scorers"
@@ -317,3 +318,127 @@ class ApiService:
       proximos_partidos.append(partido_por_jugar)
     
     return proximos_partidos
+  
+  async def obtener_eventos_partidos_fecha(self, fecha):
+    # Normalización de la fecha a cómo la espera el endpoint de Soccerdata:
+    fecha = fecha.replace("/", "-")
+    
+    url = f"{self._soccerdata_api_url_base}matches?league_id={self._id_liga_soccerdata}&date={fecha}&auth_token={self._api_key_soccerdata}"
+    
+    async with aiohttp.ClientSession() as session:
+      async with session.get(url) as response:
+        data = await response.json()
+    
+    partidos_completo = data[0]["stage"][0]["matches"] if data[0].get("stage") else []  # Respuesta completa de la API sobre los partidos.
+    
+    eventos = []
+    for partido in partidos_completo:
+      # Selecciono lo que me interesa de cada partido:
+      detalle_partido = {
+        "estado": partido["status"],
+        "minutos": partido["minute"],
+        "local_key": normalizar_equipo(partido["teams"]["home"]["name"]),
+        "visitante_key": normalizar_equipo(partido["teams"]["away"]["name"]),
+        "eventos": partido["events"]
+      }
+      
+      eventos.append(detalle_partido)
+    
+    return eventos
+  
+  async def obtener_partidos_jornada(self, jornada):
+    url = f"{self._football_data_api_url_base}/competitions/{self._id_liga_football_data}/matches?matchday={jornada}"
+    
+    headers = {
+      "X-Auth-Token": self._api_key_football_data,
+      "User-Agent": "FutBot/1.0"
+    }
+    
+    async with aiohttp.ClientSession() as session:
+      async with session.get(url, headers=headers) as response:
+        data = await response.json()
+    
+    partidos_jornada_completo = data["matches"]  # Partidos completos desde la API.
+    
+    # Normalización de la fecha y la hora de cada encuentro:
+    for partido in partidos_jornada_completo:
+      partido["fecha"], partido["hora"] = convertir_a_zona_horaria_argentina(partido["utcDate"])
+    
+    # Obtengo valores únicos de las fechas de los partidos para saber de qué día a qué día se juega en la jornada:
+    fechas = set(partido["fecha"] for partido in partidos_jornada_completo)
+    
+    # Obtengo los eventos ocurridos en los partidos por fecha:
+    eventos_por_fecha = {}
+    for fecha in fechas:
+      partidos_con_eventos = await self.obtener_eventos_partidos_fecha(fecha)
+      eventos_por_fecha[fecha] = partidos_con_eventos  # Los eventos se agrupan por fecha.
+    
+    partidos_jornada = []
+    eventos_huerfanos = None  # La API de Soccerdata suele tener por jornada un partido donde los equipos son None vs None, por lo que tengo que hacer un manejo especial para asociar los eventos a ese partido.
+    for partido in partidos_jornada_completo:
+      marcador_local = partido["score"]["fullTime"]["home"]
+      marcador_visitante = partido["score"]["fullTime"]["away"]
+      
+      estado = partido["status"]
+      if estado == "TIMED" or estado == "SCHEDULED":
+        marcador = "vs"
+      else:
+        marcador = f"{marcador_local} - {marcador_visitante}"
+      
+      # Conversión del estado en FootballData al de Soccerdata:
+      estado = normalizar_estado_partido(estado, "football_data")
+      
+      # Selecciono los datos que me interesan para cada partido:
+      partido_jornada = {
+        "fecha": partido["fecha"],
+        "hora": partido["hora"],
+        "estado": estado,
+        "jornada": partido["matchday"],
+        # Normalizo el nombre de cada equipo a una clave para poder relacionar ambas APIs con esas claves:
+        "local_key": normalizar_equipo(partido["homeTeam"]["name"]),
+        "visitante_key": normalizar_equipo(partido["awayTeam"]["name"]),
+        "ganador": partido["score"]["winner"],
+        "marcador": marcador,
+        "eventos": []
+      }
+      
+      # Obtengo el nombre canónico que generé para cada equipo a partir de su clave:
+      partido_jornada["local"] = TEAMS[partido_jornada["local_key"]]["canonical"]
+      partido_jornada["visitante"] = TEAMS[partido_jornada["visitante_key"]]["canonical"]
+      
+      # Eventos ocurridos en la fecha del partido:
+      eventos_fecha_partido = eventos_por_fecha[partido["fecha"]]
+      
+      # Recorro esos eventos para encontrar cuál corresponde al partido que estoy iterando:
+      for evento_partido in eventos_fecha_partido:
+        # El caso de None vs None:
+        if evento_partido["local_key"] is None and evento_partido["visitante_key"] is None:
+          eventos_huerfanos = evento_partido  # Guardo en una variable auxiliar ese conjunto de eventos.
+        
+        # El resto de los casos, asocio partidos de FootballData con eventos de Soccerdata si coinciden las claves del equipo local y visitante:
+        elif (
+          evento_partido["local_key"] == partido_jornada["local_key"]
+          and evento_partido["visitante_key"] == partido_jornada["visitante_key"]
+        ):
+          # Cargo información que me dio Soccerdata sobre los eventos a los partidos que obtuve con FootballData:
+          partido_jornada["eventos"] = evento_partido["eventos"]
+          partido_jornada["minutos"] = evento_partido["minutos"]
+          partido_jornada["estado"] = evento_partido["estado"]
+          break
+      
+      partidos_jornada.append(partido_jornada)
+
+    # Si hubo algún evento sin asignar a un partido:
+    if eventos_huerfanos:
+      # Recorro los partidos hasta encontrar el que está sin eventos:
+      for partido in partidos_jornada:
+        if len(partido["eventos"]) == 0:
+          # Cargo la información de los eventos en ese partido:
+          partido["eventos"] = eventos_huerfanos.get("eventos", [])
+          partido["minutos"] = eventos_huerfanos.get("minutos")
+          partido["estado"] = eventos_huerfanos.get("estado")
+          
+          # Flag especial para este partido ya que la API de Soccerdata asocia todos los eventos sucedidos al equipo "home", por lo que tengo que manejar este caso especial para que el formateador del partido no muestre a qué equipo pertenece el evento. En el resto de los partidos sí está bien cargado si el evento corresponde a "home" o "away", por lo que sí puedo mencionar con certeza a qué equipo corresponde.
+          partido["flag_eventos_sin_equipo"] = "SI"
+
+    return partidos_jornada
