@@ -27,7 +27,8 @@ class CommandHandlerBot:
       "📅 <b>Partidos del día y del siguiente</b>\n"
       "📊 <b>Tabla de posiciones</b>\n"
       "🥅 <b>Goleadores</b>\n"
-      "🛡️ <b>Equipos</b>\n\n"
+      "🛡️ <b>Equipos</b>\n"
+      "📅 <b>Partidos de una jornada</b>\n\n"
       "Escribí /ayuda para ver todos los comandos disponibles ⚙️"
     )
 
@@ -42,7 +43,8 @@ class CommandHandlerBot:
       "📅 <b>/maniana</b> — Muestra los <b>partidos del día siguiente</b> (con hora y equipos).\n"
       "📊 <b>/tabla</b> — Muestra la <b>tabla de posiciones</b> actualizada.\n"
       "📈 <b>/goleadores</b> — Muestra el <b>top 10</b> de goleadores.\n"
-      "🛡️ <b>/equipos</b> — Muestra información general del club y permite acceder a mayor detalle sobre el plantel, el entrenador, racha del equipo y próximos encuentros mediante botones.\n\n"
+      "🛡️ <b>/equipos</b> — Muestra información general del club y permite acceder a mayor detalle sobre el plantel, el entrenador, racha del equipo y próximos encuentros mediante botones.\n"
+      "📅 <b>/jornada &lt;número&gt;</b> — Muestra información sobre todos los partidos de la jornada solicitada.\n\n"
     )
 
   async def hoy(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -341,3 +343,108 @@ class CommandHandlerBot:
       await query.message.reply_html(mensaje)
     except Exception as e:
       await query.message.reply_text(f"❌ Error obteniendo próximos partidos: {e}")
+  
+  async def jornada(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Responde al comando /jornada
+    """
+    try:
+      # Validación de argumentos:
+      if len(context.args) != 1:
+        await update.message.reply_text("❌ Usá: /jornada <número>")
+        return
+
+      jornada = int(context.args[0])  # Obtener número de jornada.
+
+      # Validación del valor de la jornada:
+      if jornada < 1 or jornada > 38:
+        await update.message.reply_text("❌ La jornada debe estar entre 1 y 38.")
+        return
+
+      partidos = await self._api_service.obtener_partidos_jornada(jornada)  # Obtener partidos de la jornada solicitada.
+
+      if not partidos:
+        await update.message.reply_text("❌ No hay partidos para esta jornada.")
+        return
+
+      index = 0
+      texto = formatear_partido(partidos[index])  # Formateo del primer partido de la jornada.
+
+      botones = []
+
+      # Si hay más de un partido en la jornada genera el botón para avanzar al siguiente:
+      if len(partidos) > 1:
+        botones.append(
+          InlineKeyboardButton(
+            "➡️",
+            callback_data=f"jornada_{jornada}_{index + 1}"
+          )
+        )
+
+      reply_markup = InlineKeyboardMarkup([botones]) if botones else None
+
+      sent = await update.message.reply_html(
+        texto,
+        reply_markup=reply_markup
+      )
+
+      # Guardamos estado:
+      context.user_data["jornada_partidos"] = partidos
+      context.user_data["jornada_message_id"] = sent.message_id
+      context.user_data["jornada_actual"] = jornada
+
+    except ValueError:
+      await update.message.reply_text("❌ El número de jornada debe ser un entero.")
+    except Exception as e:
+      await update.message.reply_text(f"❌ Error obteniendo la jornada: {e}")
+
+  async def jornada_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    _, jornada, index = query.data.split("_")  # Obtener jornada y página.
+    jornada = int(jornada)
+    index = int(index)
+
+    partidos = context.user_data.get("jornada_partidos")  # Recuperar partidos del contexto para no volver a consultar a la API.
+
+    # En caso de que ya no estén los partidos cacheados:
+    if not partidos:
+      await query.message.reply_text("❌ La sesión expiró. Volvé a usar /jornada.")
+      return
+
+    # Manejo de páginas inválidas:
+    if index < 0 or index >= len(partidos):
+      return
+
+    texto = formatear_partido(partidos[index])  # Formateado del partido correspondiente a la página.
+
+    botones = []
+
+    # Botón para partido anterior si no es el primero de la jornada:
+    if index > 0:
+      botones.append(
+        InlineKeyboardButton(
+          "⬅️",
+          callback_data=f"jornada_{jornada}_{index - 1}"
+        )
+      )
+
+    # Botón para partido siguiente si no es el último de la jornada:
+    if index < len(partidos) - 1:
+      botones.append(
+        InlineKeyboardButton(
+          "➡️",
+          callback_data=f"jornada_{jornada}_{index + 1}"
+        )
+      )
+
+    reply_markup = InlineKeyboardMarkup([botones]) if botones else None
+
+    await context.bot.edit_message_text(
+      chat_id=query.message.chat_id,
+      message_id=context.user_data["jornada_message_id"],
+      text=texto,
+      reply_markup=reply_markup,
+      parse_mode="HTML"
+    )
