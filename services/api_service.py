@@ -38,7 +38,7 @@ class ApiService:
       clasificacion.append({
         "posicion": equipo["position"],
         "escudo": equipo["team"]["crest"],
-        "nombre": equipo["team"]["name"],
+        "nombre": TEAMS[normalizar_equipo(equipo["team"]["name"])]["canonical"],
         "puntos": equipo["points"],
         "partidos_jugados": equipo["playedGames"],
         "goles_favor": equipo["goalsFor"],
@@ -108,7 +108,7 @@ class ApiService:
     goleadores = []
     for registro in goleadores_completo:
       jugador = registro["player"]["name"]
-      equipo = registro["team"]["name"]
+      equipo = TEAMS[normalizar_equipo(registro["team"]["name"])]["canonical"]
       goles = registro["goals"]
       
       goleadores.append({
@@ -141,7 +141,7 @@ class ApiService:
     for equipo in equipos_completo:
       equipos.append({
         "id": equipo["id"],
-        "nombre": equipo["name"]
+        "nombre": TEAMS[normalizar_equipo(equipo["name"])]["canonical"]
       })
     
     return equipos
@@ -160,7 +160,7 @@ class ApiService:
         data = await response.json()
     
     equipo = {
-      "nombre": data["name"],
+      "nombre": TEAMS[normalizar_equipo(data["name"])]["canonical"],
       "direccion": data["address"],
       "sitio_web": data["website"],
       "anio_fundacion": data["founded"],
@@ -257,12 +257,12 @@ class ApiService:
         "jornada": partido["matchday"],
         "local": {
           "id": partido["homeTeam"]["id"],
-          "nombre": partido["homeTeam"]["name"],
+          "nombre": TEAMS[normalizar_equipo(partido["homeTeam"]["name"])]["canonical"],
           "goles": partido["score"]["fullTime"]["home"]
         },
         "visitante": {
           "id": partido["awayTeam"]["id"],
-          "nombre": partido["awayTeam"]["name"],
+          "nombre": TEAMS[normalizar_equipo(partido["awayTeam"]["name"])]["canonical"],
           "goles": partido["score"]["fullTime"]["away"]
         },
         "ganador": partido["score"]["winner"]
@@ -307,11 +307,11 @@ class ApiService:
         "jornada": partido["matchday"],
         "local": {
           "id": partido["homeTeam"]["id"],
-          "nombre": partido["homeTeam"]["name"]
+          "nombre": TEAMS[normalizar_equipo(partido["homeTeam"]["name"])]["canonical"]
         },
         "visitante": {
           "id": partido["awayTeam"]["id"],
-          "nombre": partido["awayTeam"]["name"]
+          "nombre": TEAMS[normalizar_equipo(partido["awayTeam"]["name"])]["canonical"]
         }
       }
       
@@ -360,9 +360,12 @@ class ApiService:
     
     partidos_jornada_completo = data["matches"]  # Partidos completos desde la API.
     
-    # Normalización de la fecha y la hora de cada encuentro:
+    # Normalización de la fecha y la hora de cada encuentro:  
     for partido in partidos_jornada_completo:
-      partido["fecha"], partido["hora"] = convertir_a_zona_horaria_argentina(partido["utcDate"])
+      postponed = None
+      if partido["status"] == "POSTPONED":
+        postponed = "SI"
+      partido["fecha"], partido["hora"] = convertir_a_zona_horaria_argentina(partido["utcDate"], postponed=postponed)
     
     # Obtengo valores únicos de las fechas de los partidos para saber de qué día a qué día se juega en la jornada:
     fechas = set(partido["fecha"] for partido in partidos_jornada_completo)
@@ -432,7 +435,8 @@ class ApiService:
     if eventos_huerfanos:
       # Recorro los partidos hasta encontrar el que está sin eventos:
       for partido in partidos_jornada:
-        if len(partido["eventos"]) == 0:
+        # Si no tiene eventos y no es un partido pospuesto:
+        if len(partido["eventos"]) == 0 and partido["estado"] not in ("POSTONED", "postponed"):
           # Cargo la información de los eventos en ese partido:
           partido["eventos"] = eventos_huerfanos.get("eventos", [])
           partido["minutos"] = eventos_huerfanos.get("minutos")
