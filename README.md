@@ -288,6 +288,42 @@ Muestra información sobre los próximos 5 encuentros que el equipo debe disputa
 
 ---
 
+### 📅 Comando `/jornada <número>`
+
+El comando `/jornada <número>` muestra los partidos de La Liga correspondientes a la jornada solicitada.
+
+🔹 **Flujo de uso**
+
+1. El usuario ejecuta el comando: `/jornada` e indica un número (es válido entre 1 y 38, extremos incluidos)
+
+2. El bot obtiene los partidos de la jornada desde la API.
+
+3. Para cada partido, el bot muestra información según su estado:
+
+    - 🕒 **Partido a futuro**: fecha, hora y equipos.
+
+    - ⏳ **Partido en juego**: marcador actual y eventos.
+
+    - 🏁 **Partido finalizado**: resultado final y eventos destacados.
+
+4. En partidos en juego o finalizados, se incluyen eventos como:
+
+    - ⚽️ Gol
+
+    - ⚽️(P) Gol de penal
+
+    - ⚽️(EC) Gol en contra
+
+    - 🔄 Cambios
+
+    - 🟥 Tarjetas rojas
+
+    - 🟨 Tarjetas amarillas
+
+El formato se adapta dinámicamente según el estado del partido, y cada partido se presenta en un mensaje, pudiendo recorrer los mismos mediante botones.
+
+---
+
 ## 🌐 APIs utilizadas
 
 El bot combina información obtenida desde dos APIs para cubrir todos los datos necesarios:

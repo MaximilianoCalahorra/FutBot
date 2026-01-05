@@ -54,8 +54,8 @@ class CommandHandlerBot:
     try:
       # Armado de la botonera:
       botonera = []
-      textos = ["🕒 Programados", "⏳ En juego", "🏁 Finalizados"]
-      callbacks = ["hoy_partidos_pre-match_0", "hoy_partidos_live_0", "hoy_partidos_finished_0"]
+      textos = ["🕒 Programados", "⏳ En juego", "🏁 Finalizados", "📅 ➡️ ⚽ Pospuestos"]
+      callbacks = ["hoy_partidos_pre-match_0", "hoy_partidos_live_0", "hoy_partidos_finished_0", "hoy_partidos_postponed_0"]
       
       for i in range(len(textos)):
         botonera.append([

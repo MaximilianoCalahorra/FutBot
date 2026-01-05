@@ -35,7 +35,7 @@ def formatear_clasificacion_tabla(clasificacion):
 
 from datetime import datetime, timedelta
 
-def convertir_a_zona_horaria_argentina(date_str, time_str=None):
+def convertir_a_zona_horaria_argentina(date_str, time_str=None, postponed=None):
     """
     Convierte fechas en UTC a horario de Argentina (UTC-3).
 
@@ -61,7 +61,10 @@ def convertir_a_zona_horaria_argentina(date_str, time_str=None):
         )
 
     # Convertir de UTC a UTC-3
-    dt_arg = dt_utc - timedelta(hours=3)
+    if postponed == None:
+      dt_arg = dt_utc - timedelta(hours=3)
+    else:
+      dt_arg = dt_utc
 
     fecha = dt_arg.strftime("%d/%m/%Y")
     hora = dt_arg.strftime("%H:%M")
@@ -164,10 +167,13 @@ def formatear_partido(partido):
       f"{local} vs {visitante}\n\n"
     )
 
-  elif estado == "live":  # Partido en juego.
+  elif estado in ("live", "halftime"):  # Partido en juego o en el descanso.
+    tiempo = f"⏳ En juego - {partido['minutos']}'\n"
+    if estado == "halftime":
+      tiempo = "⏸️ Descanso\n"
     return (
       f"🕒 {fecha} {hora}\n"
-      f"⏳ En juego\n"
+      f"{tiempo}"
       f"{local} {partido['marcador']} {visitante}\n"
       f"\n📌 Eventos:\n{eventos_formateados}\n\n"
     )
@@ -182,7 +188,6 @@ def formatear_partido(partido):
   
   elif estado == "postponed":  # Partido pospuesto.
     return (
-      f"🕒 {fecha} {hora}\n"
       f"📅 ➡️ ⚽ Pospuesto\n"
       f"{local} vs {visitante}\n\n"
     )
@@ -403,8 +408,8 @@ def normalizar_estado_partido(estado, api_origen):
       estado = "FINISHED"
     elif estado == "postponed":
       estado = "POSTPONED"
-    elif estado == "PAUSED":
-      estado = "halftime"
+    elif estado == "halftime":
+      estado = "PAUSED"
   elif api_origen == "football_data":
     if estado in ("TIMED", "SCHEDULED"):
         estado = "pre-match"
@@ -414,7 +419,7 @@ def normalizar_estado_partido(estado, api_origen):
       estado = "finished"
     elif estado == "POSTPONED":
       estado = "postponed"
-    elif estado == "halftime":
-      estado = "PAUSED"
+    elif estado == "PAUSED":
+      estado = "halftime"
 
   return estado
