@@ -63,21 +63,34 @@ class ApiService:
     
     for partido in partidos_completo:
       fecha, hora = convertir_a_zona_horaria_argentina(partido["date"], partido["time"])
-      equipo_local = partido["teams"]["home"]["name"]
-      equipo_visitante = partido["teams"]["away"]["name"]
+      
+      # Claves de los equipos:
+      clave_equipo_local = normalizar_equipo(partido["teams"]["home"]["name"])
+      clave_equipo_visitante = normalizar_equipo(partido["teams"]["away"]["name"])
+      
+      # Carga de nombres e identificación de partido None vs None si corresponde:
+      equipo_local = "None"
+      equipo_visitante = "None"
+      eventos_sin_equipo = "NO"
+      if clave_equipo_local != None and clave_equipo_visitante != None:
+        equipo_local = TEAMS[clave_equipo_local]["canonical"]
+        equipo_visitante = TEAMS[clave_equipo_visitante]["canonical"]
+      else:
+        eventos_sin_equipo = "SI"
+      
       estado = partido["status"]
       minutos = partido["minute"]
       marcador_local = partido["goals"]["home_ft_goals"]
       marcador_visitante = partido["goals"]["away_ft_goals"]
       eventos = partido["events"]
       
-      if partido["status"] == estado_partido:
+      if partido["status"] == estado_partido or (estado_partido == "live" and partido["status"] == "halftime"):
         if estado == "pre-match":
           marcador = "vs"
         else:
           marcador = f"{marcador_local} - {marcador_visitante}"
-        
-        partidos.append({
+          
+        partido_agregar = {
           "fecha": fecha,
           "hora": hora,
           "estado": estado,
@@ -86,7 +99,13 @@ class ApiService:
           "visitante": equipo_visitante,
           "marcador": marcador,
           "eventos": eventos
-        })
+        }
+        
+        # Si es un partido None vs None levanto el flag:
+        if eventos_sin_equipo == "SI":
+          partido_agregar["flag_eventos_sin_equipo"] = "SI"
+        
+        partidos.append(partido_agregar)
       
     return partidos   
     
