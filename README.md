@@ -98,6 +98,8 @@ El comando `/hoy` muestra los partidos de La Liga correspondientes al día actua
 
     - 🏁 **Partido finalizado**: resultado final y eventos destacados.
 
+    - 📅 ➡️ ⚽ **Partido pospuesto**: equipos que se iban a enfrentar.
+
 5. En partidos en juego o finalizados, se incluyen eventos como:
 
     - ⚽️ Gol
@@ -305,6 +307,8 @@ El comando `/jornada <número>` muestra los partidos de La Liga correspondientes
     - ⏳ **Partido en juego**: marcador actual y eventos.
 
     - 🏁 **Partido finalizado**: resultado final y eventos destacados.
+
+    - 📅 ➡️ ⚽ **Partido pospuesto**: equipos que se iban a enfrentar.
 
 4. En partidos en juego o finalizados, se incluyen eventos como:
 
