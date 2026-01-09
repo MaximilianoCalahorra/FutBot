@@ -1,20 +1,19 @@
-# from telegram import Update
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from datetime import date, timedelta
 from services.api_service import ApiService
-from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_partidos, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha, formatear_proximos_partidos
+from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_partidos, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha, formatear_proximos_partidos, formatear_previa_partido
+from bot.keyboards import teclado_jornada
 
 class CommandHandlerBot:
   """
     Contiene los manejadores de comandos del bot.
   """
-  def __init__(self, config):
+  def __init__(self, api_service):
     """
     Inicializa el manejador de comandos.
     """
-    self._config = config
-    self._api_service = ApiService(config)
+    self._api_service = api_service
   
   async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -368,21 +367,20 @@ class CommandHandlerBot:
         return
 
       index = 0
+      context.user_data["jornada_index"] = index
+      context.user_data["jornada_actual"] = jornada
+    
       texto = formatear_partido(partidos[index])  # Formateo del primer partido de la jornada.
-
-      botones = []
-
-      # Si hay más de un partido en la jornada genera el botón para avanzar al siguiente:
-      if len(partidos) > 1:
-        botones.append(
-          InlineKeyboardButton(
-            "➡️",
-            callback_data=f"jornada_{jornada}_{index + 1}"
-          )
-        )
-
-      reply_markup = InlineKeyboardMarkup([botones]) if botones else None
-
+      
+      # Construcción de la botonera:
+      reply_markup = teclado_jornada(
+        jornada=jornada,
+        index=index,
+        total=len(partidos),
+        mostrar_previa=(partidos[index]["estado"] == "pre-match" and partidos[index].get("id", "") != ""),
+        id_partido=partidos[index].get("id")
+      )
+      
       sent = await update.message.reply_html(
         texto,
         reply_markup=reply_markup
@@ -391,7 +389,6 @@ class CommandHandlerBot:
       # Guardamos estado:
       context.user_data["jornada_partidos"] = partidos
       context.user_data["jornada_message_id"] = sent.message_id
-      context.user_data["jornada_actual"] = jornada
 
     except ValueError:
       await update.message.reply_text("❌ El número de jornada debe ser un entero.")
@@ -406,6 +403,9 @@ class CommandHandlerBot:
     jornada = int(jornada)
     index = int(index)
 
+    context.user_data["jornada_index"] = index
+    context.user_data["jornada_actual"] = jornada
+    
     partidos = context.user_data.get("jornada_partidos")  # Recuperar partidos del contexto para no volver a consultar a la API.
 
     # En caso de que ya no estén los partidos cacheados:
@@ -419,27 +419,13 @@ class CommandHandlerBot:
 
     texto = formatear_partido(partidos[index])  # Formateado del partido correspondiente a la página.
 
-    botones = []
-
-    # Botón para partido anterior si no es el primero de la jornada:
-    if index > 0:
-      botones.append(
-        InlineKeyboardButton(
-          "⬅️",
-          callback_data=f"jornada_{jornada}_{index - 1}"
-        )
-      )
-
-    # Botón para partido siguiente si no es el último de la jornada:
-    if index < len(partidos) - 1:
-      botones.append(
-        InlineKeyboardButton(
-          "➡️",
-          callback_data=f"jornada_{jornada}_{index + 1}"
-        )
-      )
-
-    reply_markup = InlineKeyboardMarkup([botones]) if botones else None
+    reply_markup = teclado_jornada(
+      jornada=jornada,
+      index=index,
+      total=len(partidos),
+      mostrar_previa=(partidos[index]["estado"] == "pre-match" and partidos[index].get("id", "") != ""),
+      id_partido=partidos[index].get("id")
+    )
 
     await context.bot.edit_message_text(
       chat_id=query.message.chat_id,
@@ -447,4 +433,40 @@ class CommandHandlerBot:
       text=texto,
       reply_markup=reply_markup,
       parse_mode="HTML"
+    )
+  
+  async def previa_partido_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer("⏳ Cargando previa…")
+
+    _, _, id = query.data.split("_")
+    id_partido = int(id)
+
+    cache_key = f"previa_{id_partido}"
+
+    if cache_key in context.user_data:
+      previa = context.user_data[cache_key]
+    else:
+      previa = await self._api_service.obtener_previa_partido(id_partido)
+      context.user_data[cache_key] = previa
+
+    texto_previa = formatear_previa_partido(previa)
+    texto = f"{query.message.text}\n\n{texto_previa}"
+
+    index = context.user_data["jornada_index"]
+    jornada = context.user_data["jornada_actual"]
+    partidos = context.user_data["jornada_partidos"]
+
+    reply_markup = teclado_jornada(
+      jornada=jornada,
+      index=index,
+      total=len(partidos),
+      mostrar_previa=False,
+      id_partido=id_partido
+    )
+
+    await query.message.edit_text(
+      texto,
+      parse_mode="HTML",
+      reply_markup=reply_markup
     )

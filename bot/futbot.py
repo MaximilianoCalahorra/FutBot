@@ -1,7 +1,9 @@
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler
-import logging
 from config.config import Config
 from bot.command_handler import CommandHandlerBot
+from services.api_service import ApiService
+from services.groq_service import GroqService
+import logging
 
 class FutBot:
   """
@@ -15,9 +17,22 @@ class FutBot:
     Args:
       config (Config): Objeto de configuración con tokens y parámetros del proyecto.
     """
+    # Config:
     self._config = config
-    self._application = Application.builder().token(config.telegram_token).build()
-    self._command_handler = CommandHandlerBot(config)
+
+    # Telegram:
+    self._application = (
+      Application.builder()
+      .token(config.telegram_token)
+      .build()
+    )
+
+    # Servicios:
+    groq_service = GroqService(config)
+    api_service = ApiService(config, groq_service)
+
+    # Handlers:
+    self._command_handler = CommandHandlerBot(api_service)
   
   def _register_handlers(self):
     """
@@ -38,6 +53,7 @@ class FutBot:
     self._application.add_handler(CallbackQueryHandler(self._command_handler.equipo_proximos_partidos_callback, pattern="^equipo_proximos_partidos_"))
     self._application.add_handler(CallbackQueryHandler(self._command_handler.hoy_callback, pattern="^hoy_partidos_"))
     self._application.add_handler(CallbackQueryHandler(self._command_handler.jornada_callback, pattern="^jornada_"))
+    self._application.add_handler(CallbackQueryHandler(self._command_handler.previa_partido_callback, pattern="^previa_partido_"))
   
   def run(self):
     """
