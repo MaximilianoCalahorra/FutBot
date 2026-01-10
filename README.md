@@ -118,6 +118,14 @@ El comando `/hoy` muestra los partidos de La Liga correspondientes al día actua
 
     - 🟨 Tarjetas amarillas
 
+6. En partidos programados, se incluye la opción de consultar por la previa del mismo, la cual contiene:
+
+    - ☀️ Pronóstico del tiempo
+    
+    - 🔥 Nivel de expectativa
+    
+    - 📝 Análisis de cómo llegan ambos equipos al encuentro y qué se puede esperar del mismo
+
 El formato se adapta dinámicamente según el estado del partido.
 
 ---
@@ -132,7 +140,12 @@ El comando `/maniana` muestra los partidos de La Liga correspondientes al día s
 
 2. El bot obtiene los partidos del día desde la API.
 
-3. Para cada partido, el bot muestra fecha, hora y equipos.
+3. Para cada partido, el bot muestra fecha, hora y equipos, además de un botón que permite consultar la previa del mismo, la cual consiste en:
+    - ☀️ Pronóstico del tiempo
+
+    - 🔥 Nivel de expectativa
+    
+    - 📝 Análisis de cómo llegan ambos equipos al encuentro y qué se puede esperar del mismo
 
 ---
 
