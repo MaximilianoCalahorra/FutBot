@@ -52,8 +52,8 @@ class FutBot:
     self._application.add_handler(CallbackQueryHandler(self._command_handler.equipo_racha_callback, pattern="^equipo_racha_"))
     self._application.add_handler(CallbackQueryHandler(self._command_handler.equipo_proximos_partidos_callback, pattern="^equipo_proximos_partidos_"))
     self._application.add_handler(CallbackQueryHandler(self._command_handler.hoy_callback, pattern="^hoy_partidos_"))
-    self._application.add_handler(CallbackQueryHandler(self._command_handler.jornada_callback, pattern="^jornada_"))
-    self._application.add_handler(CallbackQueryHandler(self._command_handler.previa_partido_callback, pattern="^previa_partido_"))
+    self._application.add_handler(CallbackQueryHandler(self._command_handler.navegar_partido_callback, pattern="^nav_"))
+    self._application.add_handler(CallbackQueryHandler(self._command_handler.previa_partido_callback, pattern="^previa_"))
   
   def run(self):
     """

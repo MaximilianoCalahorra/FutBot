@@ -96,6 +96,7 @@ class ApiService:
           marcador = f"{marcador_local} - {marcador_visitante}"
           
         partido_agregar = {
+          "id": id_partido,
           "fecha": fecha,
           "hora": hora,
           "estado": estado,
@@ -109,15 +110,6 @@ class ApiService:
         # Si es un partido None vs None levanto el flag:
         if eventos_sin_equipo == "SI":
           partido_agregar["flag_eventos_sin_equipo"] = "SI"
-        
-        # Si es un partido programado obtenemos la previa del mismo:
-        if estado == "pre-match":
-          previa = await self.obtener_previa_partido(id_partido)
-          if previa != None:
-            partido_agregar["temperatura"] = previa["temperatura"]
-            partido_agregar["descripcion_clima"] = previa["descripcion_clima"]
-            partido_agregar["expectativa"] = previa["expectativa_partido"]
-            partido_agregar["comentarios"] = previa["comentarios"]
         
         partidos.append(partido_agregar)
       
@@ -488,9 +480,9 @@ class ApiService:
     if response.status == 400 or response.status == 404 or response.status == 429:
       previa = None
     else:
-      comentarios_ingles = construir_texto_previa(data["preview_content"])
+      comentarios_ingles = construir_texto_previa(data["preview_content"])  # Unión de los comentarios que devuelve la API.
       
-      comentarios = self._groq_service.generar_previa(comentarios_ingles)
+      comentarios = self._groq_service.generar_previa(comentarios_ingles)  # Resumen y traducción de los comentarios.
       
       previa = {
         "temperatura": data["match_data"]["weather"]["temp_c"],
