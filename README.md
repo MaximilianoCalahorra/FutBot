@@ -16,12 +16,15 @@ futbot/
 │
 ├── bot/
 │   ├── futbot.py               # Inicializa el bot, registra comandos y callbacks
+│   ├── keyboards.py            # Definición de botoneras
 │   └── command_handler.py      # Implementación de cada comando
 │
 ├── services/
+│   ├── groq_service.py         # Capa de comunicación con Groq
 │   └── api_service.py          # Capa de comunicación con APIs externas (Football-Data + SoccerData)
 │
 └── utils/
+    ├── teams.py                # Estandarización de información sobre los equipos
     └── formatters.py           # Funciones reutilizables para formatear mensajes
 ```
 
@@ -37,6 +40,7 @@ futbot/
 | `/tabla`      | Muestra la tabla de posiciones actualizada.                                 |
 | `/goleadores` | Muestra el top 10 de máximos goleadores del campeonato.                     |
 | `/equipo`     | Permite explorar información detallada de un equipo mediante botoneras.    |
+| `/jornada <número>`     | Muestra los partidos de la jornada solicitada.    |
 
 ---
 
@@ -98,6 +102,8 @@ El comando `/hoy` muestra los partidos de La Liga correspondientes al día actua
 
     - 🏁 **Partido finalizado**: resultado final y eventos destacados.
 
+    - 📅 ➡️ ⚽ **Partido pospuesto**: equipos que se iban a enfrentar.
+
 5. En partidos en juego o finalizados, se incluyen eventos como:
 
     - ⚽️ Gol
@@ -111,6 +117,14 @@ El comando `/hoy` muestra los partidos de La Liga correspondientes al día actua
     - 🟥 Tarjetas rojas
 
     - 🟨 Tarjetas amarillas
+
+6. En partidos programados, se incluye la opción de consultar por la previa del mismo, la cual contiene:
+
+    - ☀️ Pronóstico del tiempo
+    
+    - 🔥 Nivel de expectativa
+    
+    - 📝 Análisis de cómo llegan ambos equipos al encuentro y qué se puede esperar del mismo
 
 El formato se adapta dinámicamente según el estado del partido.
 
@@ -126,7 +140,12 @@ El comando `/maniana` muestra los partidos de La Liga correspondientes al día s
 
 2. El bot obtiene los partidos del día desde la API.
 
-3. Para cada partido, el bot muestra fecha, hora y equipos.
+3. Para cada partido, el bot muestra fecha, hora y equipos, además de un botón que permite consultar la previa del mismo, la cual consiste en:
+    - ☀️ Pronóstico del tiempo
+
+    - 🔥 Nivel de expectativa
+    
+    - 📝 Análisis de cómo llegan ambos equipos al encuentro y qué se puede esperar del mismo
 
 ---
 
@@ -306,6 +325,8 @@ El comando `/jornada <número>` muestra los partidos de La Liga correspondientes
 
     - 🏁 **Partido finalizado**: resultado final y eventos destacados.
 
+    - 📅 ➡️ ⚽ **Partido pospuesto**: equipos que se iban a enfrentar.
+
 4. En partidos en juego o finalizados, se incluyen eventos como:
 
     - ⚽️ Gol
@@ -319,6 +340,14 @@ El comando `/jornada <número>` muestra los partidos de La Liga correspondientes
     - 🟥 Tarjetas rojas
 
     - 🟨 Tarjetas amarillas
+
+5. En partidos programados, se incluye la opción de consultar por la previa del mismo, la cual contiene:
+
+    - ☀️ Pronóstico del tiempo
+    
+    - 🔥 Nivel de expectativa
+    
+    - 📝 Análisis de cómo llegan ambos equipos al encuentro y qué se puede esperar del mismo
 
 El formato se adapta dinámicamente según el estado del partido, y cada partido se presenta en un mensaje, pudiendo recorrer los mismos mediante botones.
 
@@ -444,14 +473,18 @@ python-telegram-bot==21.4
 aiohttp==3.9.5
 python-dotenv==1.0.1
 pycountry==24.6.1
+groq==0.9.0
+httpx>=0.28
 ```
 
-| Paquete               | Uso                                         |
-| --------------------- | ------------------------------------------- |
-| `python-telegram-bot` | Manejo de la API de Telegram en modo async. |
-| `aiohttp`             | Requests asincrónicos a las APIs.           |
-| `python-dotenv`       | Carga de variables desde `.env`.            |
-| `pycountry` | Resolución de países y códigos ISO para banderas |
+| Paquete               | Uso                                                                  |
+| --------------------- | -------------------------------------------------------------------- |
+| `python-telegram-bot` | Manejo de la API de Telegram en modo async.                          |
+| `aiohttp`             | Requests asincrónicos a las APIs.                                    |
+| `python-dotenv`       | Carga de variables desde `.env`.                                     |
+| `pycountry`           | Resolución de países y códigos ISO para banderas                     |
+| `groq`                | Cliente para consumir modelos de lenguaje (LLMs) vía la API de Groq. |
+| `httpx`               | Cliente HTTP asíncrono para realizar requests a APIs externas.       |
 
 ---
 

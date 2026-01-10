@@ -48,17 +48,17 @@ def convertir_a_zona_horaria_argentina(date_str, time_str=None, postponed=None):
     """
 
     if time_str:
-        # Formato: dd/mm/YYYY + HH:MM
-        dt_utc = datetime.strptime(
-            f"{date_str} {time_str}",
-            "%d/%m/%Y %H:%M"
-        )
+      # Formato: dd/mm/YYYY + HH:MM
+      dt_utc = datetime.strptime(
+        f"{date_str} {time_str}",
+        "%d/%m/%Y %H:%M"
+      )
     else:
-        # Formato ISO 8601: 2025-11-09T15:15:00Z
-        dt_utc = datetime.strptime(
-            date_str,
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
+      # Formato ISO 8601: 2025-11-09T15:15:00Z
+      dt_utc = datetime.strptime(
+        date_str,
+        "%Y-%m-%dT%H:%M:%SZ"
+      )
 
     # Convertir de UTC a UTC-3
     if postponed == None:
@@ -140,6 +140,76 @@ def formatear_eventos(eventos, local, visitante):
     return "\n".join(formatear_evento(e, local, visitante) for e in eventos)
   return "\n"
 
+def formatear_clima(descripcion: str, temp_c: float | None = None) -> str:
+  desc = descripcion.lower().strip()
+  
+  if "thunder" in desc or "storm" in desc:
+    texto, emoji = "Tormenta", "⛈️"
+
+  elif "snow" in desc:
+    texto, emoji = "Nieve", "❄️"
+
+  elif "heavy rain" in desc:
+    texto, emoji = "Lluvia fuerte", "🌧️"
+
+  elif "light rain" in desc or "rain shower" in desc or "shower" in desc:
+    texto, emoji = "Lluvia ligera", "🌦️"
+
+  elif "rain" in desc:
+    texto, emoji = "Lluvia", "🌧️"
+
+  elif "fog" in desc or "mist" in desc:
+    texto, emoji = "Neblina", "🌫️"
+
+  elif "overcast" in desc:
+    texto, emoji = "Cubierto", "☁️"
+
+  elif "cloud" in desc:
+    texto, emoji = "Nublado", "☁️"
+
+  elif "sun" in desc or "clear" in desc:
+    texto, emoji = "Despejado", "☀️"
+
+  else:
+    texto, emoji = "Clima variable", "🌡️"
+
+  if temp_c is not None:
+    return f"{emoji} {texto} · {round(temp_c)}°C\n"
+
+  return f"{emoji} {texto} · {round(temp_c)}°C\n"
+
+def formatear_expectativa(valor):
+  expectativa = "🔥 Expectativa:"
+  if valor >= 8.5:
+    return f"{expectativa} muy alta\n"
+  if valor >= 7:
+    return f"{expectativa} alta\n"
+  if valor >= 4:
+    return f"{expectativa} media\n"
+  return f"{expectativa} baja\n"
+
+def formatear_previa_partido(previa):
+  partes = []
+  
+  if previa == None:
+    return "ℹ️ La previa del encuentro aún no se encuentra disponible."
+
+  if previa.get("temperatura") and previa.get("descripcion_clima"):
+    partes.append(
+      formatear_clima(
+        previa["descripcion_clima"],
+        previa["temperatura"]
+      )
+    )
+
+  if previa.get("expectativa_partido"):
+    partes.append(formatear_expectativa(previa["expectativa_partido"]))
+
+  if previa.get("comentarios"):
+    partes.append(f"📝 <b>Previa</b>\n{previa['comentarios']}")
+
+  return "\n".join(partes)
+
 def formatear_partido(partido):
   estado = partido["estado"]
   eventos = partido["eventos"]
@@ -147,6 +217,8 @@ def formatear_partido(partido):
   visitante = partido["visitante"]
   fecha = partido["fecha"]
   hora = partido["hora"]
+  
+  previa_partido = formatear_previa_partido(partido.get("previa", {}))
   
   # Manejo del caso en que los eventos no se puedan asociar con seguridad a cada equipo:
   local_eventos = None
@@ -165,6 +237,7 @@ def formatear_partido(partido):
     return (
       f"🕒 {fecha} {hora}\n"
       f"{local} vs {visitante}\n\n"
+      f"{previa_partido}"
     )
 
   elif estado in ("live", "halftime"):  # Partido en juego o en el descanso.
@@ -423,3 +496,12 @@ def normalizar_estado_partido(estado, api_origen):
       estado = "halftime"
 
   return estado
+
+def construir_texto_previa(preview_content: list[dict]) -> str:
+  partes = []
+
+  for bloque in preview_content:
+    if bloque["name"].startswith("p"):
+      partes.append(bloque["content"])
+
+  return "\n\n---\n\n".join(partes)

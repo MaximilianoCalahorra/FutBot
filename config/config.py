@@ -13,6 +13,7 @@ class Config:
     self._telegram_token = os.getenv("TELEGRAM_TOKEN")
     self._football_data_org_api_key = os.getenv("FOOTBALL_DATA_ORG_API_KEY")
     self._soccerdata_api_key = os.getenv("SOCCERDATA_API_KEY")
+    self._groq_api_key = os.getenv("GROQ_API_KEY")
     
     # Validaciones:
     if not self._telegram_token:
@@ -23,6 +24,9 @@ class Config:
     
     if not self._soccerdata_api_key:
       raise ValueError("No se encontró la API key de Soccerdata. Verificá el archivo .env")
+    
+    if not self._groq_api_key:
+      raise ValueError("No se encontró la API key de Groq. Verificá el archivo .env")
     
     # Variables adicionales de configuración:
     self._id_liga_football_data = "PD"  # La Liga.
@@ -58,3 +62,7 @@ class Config:
   @property
   def soccerdata_api_base_url(self):
     return self._soccerdata_api_base_url
+  
+  @property
+  def groq_api_key(self):
+    return self._groq_api_key
