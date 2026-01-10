@@ -1,9 +1,9 @@
 import aiohttp
-from utils.formatters import convertir_a_zona_horaria_argentina, normalizar_estado_partido
+from utils.formatters import convertir_a_zona_horaria_argentina, normalizar_estado_partido, construir_texto_previa
 from utils.teams import normalizar_equipo, TEAMS
 
 class ApiService:
-  def __init__(self, config):
+  def __init__(self, config, groq_service):
     # API Football Data:
     self._football_data_api_url_base = config.football_data_org_api_base_url
     self._id_liga_football_data = config.id_liga_football_data
@@ -13,6 +13,12 @@ class ApiService:
     self._soccerdata_api_url_base = config.soccerdata_api_base_url
     self._id_liga_soccerdata = config.id_liga_soccerdata
     self._api_key_soccerdata = config.soccerdata_api_key
+    
+    # Groq:
+    self._groq_service = groq_service
+    
+    # Sesión para consultas:
+    self._session = aiohttp.ClientSession()
   
   async def obtener_clasificacion(self):
     # Endpoint a consultar:
@@ -25,9 +31,8 @@ class ApiService:
     }
 
     # Consultar:
-    async with aiohttp.ClientSession() as session:
-      async with session.get(url, headers=headers) as response:
-        data = await response.json()
+    async with self._session.get(url, headers=headers) as response:
+      data = await response.json()
 
     # Tabla completa:
     clasificacion_completa = data["standings"][0]["table"]
@@ -52,11 +57,10 @@ class ApiService:
     return clasificacion
   
   async def obtener_partidos_estado_y_fecha(self, estado_partido, fecha):
-    url = f"https://api.soccerdataapi.com/matches/?league_id={self._id_liga_soccerdata}&date={fecha}&auth_token={self._api_key_soccerdata}"
+    url = f"{self._soccerdata_api_url_base}matches/?league_id={self._id_liga_soccerdata}&date={fecha}&auth_token={self._api_key_soccerdata}"
     
-    async with aiohttp.ClientSession() as session:
-      async with session.get(url) as response:
-        data = await response.json()
+    async with self._session.get(url) as response:
+      data = await response.json()
     
     partidos_completo = data[0]["stage"][0]["matches"] if data[0].get("stage") else []
     partidos = []
@@ -78,6 +82,7 @@ class ApiService:
       else:
         eventos_sin_equipo = "SI"
       
+      id_partido = partido["id"]
       estado = partido["status"]
       minutos = partido["minute"]
       marcador_local = partido["goals"]["home_ft_goals"]
@@ -91,6 +96,7 @@ class ApiService:
           marcador = f"{marcador_local} - {marcador_visitante}"
           
         partido_agregar = {
+          "id": id_partido,
           "fecha": fecha,
           "hora": hora,
           "estado": estado,
@@ -118,9 +124,8 @@ class ApiService:
     }
     
     # Consultar:
-    async with aiohttp.ClientSession() as session:
-      async with session.get(url, headers=headers) as response:
-        data = await response.json()
+    async with self._session.get(url, headers=headers) as response:
+      data = await response.json()
     
     goleadores_completo = data["scorers"]
     
@@ -150,9 +155,8 @@ class ApiService:
     }
     
     # Consultar:
-    async with aiohttp.ClientSession() as session:
-      async with session.get(url, headers=headers) as response:
-        data = await response.json()
+    async with self._session.get(url, headers=headers) as response:
+      data = await response.json()
         
     equipos_completo = data["teams"]
     
@@ -174,9 +178,8 @@ class ApiService:
     }
     
     # Consultar:
-    async with aiohttp.ClientSession() as session:
-      async with session.get(url, headers=headers) as response:
-        data = await response.json()
+    async with self._session.get(url, headers=headers) as response:
+      data = await response.json()
     
     equipo = {
       "nombre": TEAMS[normalizar_equipo(data["name"])]["canonical"],
@@ -198,9 +201,8 @@ class ApiService:
       "User-Agent": "FutBot/1.0"
     }
     
-    async with aiohttp.ClientSession() as session:
-      async with session.get(url, headers=headers) as response:
-        data = await response.json()
+    async with self._session.get(url, headers=headers) as response:
+      data = await response.json()
     
     plantel = []
     plantel_completo = data["squad"]
@@ -225,9 +227,8 @@ class ApiService:
       "User-Agent": "FutBot/1.0"
     }
     
-    async with aiohttp.ClientSession() as session:
-      async with session.get(url, headers=headers) as response:
-        data = await response.json()
+    async with self._session.get(url, headers=headers) as response:
+      data = await response.json()
     
     entrenador_completo = data["coach"]
     
@@ -249,9 +250,8 @@ class ApiService:
       "User-Agent": "FutBot/1.0"
     }
     
-    async with aiohttp.ClientSession() as session:
-      async with session.get(url, headers=headers) as response:
-        data = await response.json()
+    async with self._session.get(url, headers=headers) as response:
+      data = await response.json()
         
     todos_partidos = data["matches"]  # Todos los partidos del equipo en la temporada.
     
@@ -299,9 +299,8 @@ class ApiService:
       "User-Agent": "FutBot/1.0"
     }
     
-    async with aiohttp.ClientSession() as session:
-      async with session.get(url, headers=headers) as response:
-        data = await response.json()
+    async with self._session.get(url, headers=headers) as response:
+      data = await response.json()
     
     todos_partidos = data["matches"]  # Todos los partidos del equipo en la temporada.
     
@@ -344,9 +343,8 @@ class ApiService:
     
     url = f"{self._soccerdata_api_url_base}matches?league_id={self._id_liga_soccerdata}&date={fecha}&auth_token={self._api_key_soccerdata}"
     
-    async with aiohttp.ClientSession() as session:
-      async with session.get(url) as response:
-        data = await response.json()
+    async with self._session.get(url) as response:
+      data = await response.json()
     
     partidos_completo = data[0]["stage"][0]["matches"] if data[0].get("stage") else []  # Respuesta completa de la API sobre los partidos.
     
@@ -354,6 +352,7 @@ class ApiService:
     for partido in partidos_completo:
       # Selecciono lo que me interesa de cada partido:
       detalle_partido = {
+        "id": partido["id"],
         "estado": partido["status"],
         "minutos": partido["minute"],
         "local_key": normalizar_equipo(partido["teams"]["home"]["name"]),
@@ -373,9 +372,8 @@ class ApiService:
       "User-Agent": "FutBot/1.0"
     }
     
-    async with aiohttp.ClientSession() as session:
-      async with session.get(url, headers=headers) as response:
-        data = await response.json()
+    async with self._session.get(url, headers=headers) as response:
+      data = await response.json()
     
     partidos_jornada_completo = data["matches"]  # Partidos completos desde la API.
     
@@ -443,6 +441,9 @@ class ApiService:
           and evento_partido["visitante_key"] == partido_jornada["visitante_key"]
         ):
           # Cargo información que me dio Soccerdata sobre los eventos a los partidos que obtuve con FootballData:
+          
+          partido_jornada["id"] = evento_partido["id"]
+          
           partido_jornada["eventos"] = evento_partido["eventos"]
           partido_jornada["minutos"] = evento_partido["minutos"]
           partido_jornada["estado"] = evento_partido["estado"]
@@ -455,8 +456,12 @@ class ApiService:
       # Recorro los partidos hasta encontrar el que está sin eventos:
       for partido in partidos_jornada:
         # Si no tiene eventos y no es un partido pospuesto:
-        if len(partido["eventos"]) == 0 and partido["estado"] not in ("POSTONED", "postponed"):
+        id_partido = partido.get("id", "")
+        if id_partido == "":
           # Cargo la información de los eventos en ese partido:
+          
+          partido["id"] = eventos_huerfanos["id"]
+          
           partido["eventos"] = eventos_huerfanos.get("eventos", [])
           partido["minutos"] = eventos_huerfanos.get("minutos")
           partido["estado"] = eventos_huerfanos.get("estado")
@@ -465,3 +470,25 @@ class ApiService:
           partido["flag_eventos_sin_equipo"] = "SI"
 
     return partidos_jornada
+  
+  async def obtener_previa_partido(self, id_partido):
+    url = f"{self._soccerdata_api_url_base}match-preview/?match_id={id_partido}&auth_token={self._api_key_soccerdata}"
+    
+    async with self._session.get(url) as response:
+      data = await response.json()
+    
+    if response.status == 400 or response.status == 404 or response.status == 429:
+      previa = None
+    else:
+      comentarios_ingles = construir_texto_previa(data["preview_content"])  # Unión de los comentarios que devuelve la API.
+      
+      comentarios = self._groq_service.generar_previa(comentarios_ingles)  # Resumen y traducción de los comentarios.
+      
+      previa = {
+        "temperatura": data["match_data"]["weather"]["temp_c"],
+        "descripcion_clima": data["match_data"]["weather"]["description"],
+        "expectativa_partido": data["match_data"]["excitement_rating"],
+        "comentarios": comentarios
+      }
+    
+    return previa

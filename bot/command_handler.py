@@ -1,20 +1,18 @@
-# from telegram import Update
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from datetime import date, timedelta
-from services.api_service import ApiService
-from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_partidos, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha, formatear_proximos_partidos
+from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha, formatear_proximos_partidos, formatear_previa_partido
+from bot.keyboards import teclado_partido
 
 class CommandHandlerBot:
   """
     Contiene los manejadores de comandos del bot.
   """
-  def __init__(self, config):
+  def __init__(self, api_service):
     """
     Inicializa el manejador de comandos.
     """
-    self._config = config
-    self._api_service = ApiService(config)
+    self._api_service = api_service
   
   async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -76,75 +74,117 @@ class CommandHandlerBot:
       await update.message.reply_text(f"❌ Error obteniendo los partidos de hoy: {e}")
 
   async def hoy_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query  # Botón cliqueado.
-    await query.answer()
-    
-    _, _, estado_partido, index = query.data.split("_")  # Obtener estado de los partidos solicitado y página de partido.
-    index = int(index)
-    
+    query = update.callback_query
+    await query.answer("⏳ Cargando partidos…")
+
+    _, _, estado, _ = query.data.split("_")  # Obtener estado de los partidos solicitados.
+
     hoy = date.today().strftime("%d-%m-%Y")  # Fecha de hoy.
-    partidos = await self._api_service.obtener_partidos_estado_y_fecha(estado_partido, hoy)  # Partidos en ese estado.
-    
-    # Si no hay partidos:
-    if len(partidos) == 0:
+    partidos = await self._api_service.obtener_partidos_estado_y_fecha(estado, hoy)
+
+    if not partidos:
       await query.message.reply_text("❌ No hay partidos para mostrar.")
       return
+
+    # Carga de valores útiles:
+    scope = "hoy"
+    index = 0
+
+    context.user_data["hoy_estado"] = estado
+    context.user_data["hoy_partidos"] = partidos
+    context.user_data["hoy_index"] = index
+    context.user_data["scope_actual"] = scope
+
+    texto = formatear_partido(partidos[index])
+
+    # Construcción del teclado que acompaña a cada partido:
+    reply_markup = teclado_partido(
+      scope=scope,  # Para qué comando es el teclado.
+      index=index,  # Partido a mostrar.
+      total=len(partidos),  # Cantidad de partidos.
+      mostrar_previa=(partidos[index]["estado"] == "pre-match"),  # Solo si es un partido programado ofrece la posibilidad de consultar la previa.
+      id_partido=partidos[index].get("id")  # Id del partido a mostrar.
+    )
+
+    sent = await query.message.reply_html(texto, reply_markup=reply_markup)
+    context.user_data[f"{scope}_message_id"] = sent.message_id
     
-    if index < 0 or index >= len(partidos):
-      await query.message.reply_text("❌ No hay más partidos para mostrar.")
+  async def navegar_partido_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Permite desplazarse entre partidos.
+    """
+    query = update.callback_query
+    await query.answer("⏳ Cargando partido…")
+
+    _, scope, index = query.data.split("_")  # Obtener entorno desde el que se llamó y partido solicitado.
+    index = int(index)
+
+    partidos = context.user_data.get(f"{scope}_partidos")  # Partidos correspondientes a ese entorno.
+    msg_id = context.user_data.get(f"{scope}_message_id")  # Id del mensaje.
+
+    if not partidos:
+      await query.message.reply_text("❌ La sesión expiró.")
       return
-      
-    texto = formatear_partido(partidos[index])  # Formateado del partido de la página actual.
-    
-    # Botonera para avanzar/retroceder a través de las páginas:
-    botones = []
-    
-    if index > 0:
-      botones.append(
-        InlineKeyboardButton("⬅️", callback_data=f"hoy_partidos_{estado_partido}_{index - 1}")
-      )
-    
-    if index < len(partidos) - 1:
-      botones.append(
-        InlineKeyboardButton("➡️", callback_data=f"hoy_partidos_{estado_partido}_{index + 1}")
-      )
-    
-    reply_markup = InlineKeyboardMarkup([botones])
-    
-    hoy_partidos_msg_id = context.user_data.get("hoy_partidos_message_id")
-    
-    # Si todavía no hubo un mensaje sobre los partidos:
-    if hoy_partidos_msg_id is None:
-      sent = await query.message.reply_html(
-        texto,
-        reply_markup=reply_markup
-      )
-      context.user_data["hoy_partidos_message_id"] = sent.message_id  # Generamos un nuevo mensaje con el contenido.
-    else: # Si ya hubo al menos un mensaje:
-      # Editamos el mensaje con el nuevo contenido:
-      await context.bot.edit_message_text(
-        chat_id=query.message.chat_id,
-        message_id=hoy_partidos_msg_id,
-        text=texto,
-        reply_markup=reply_markup,
-        parse_mode="HTML"
-      )
+
+    # Cargar los nuevos valores para el entorno y el partido solicitado:
+    context.user_data[f"{scope}_index"] = index
+    context.user_data["scope_actual"] = scope
+
+    # Acceder al partido solicitado y formatearlo:
+    partido = partidos[index]
+    texto = formatear_partido(partido)
+
+    # Construcción del teclado que acompaña al partido:
+    reply_markup = teclado_partido(
+      scope=scope,  # Para qué comando es el teclado.
+      index=index,  # Partido a mostrar.
+      total=len(partidos),  # Cantidad de partidos.
+      mostrar_previa=(partido["estado"] == "pre-match"),  # Solo si es un partido programado ofrece la posibilidad de consultar la previa.
+      id_partido=partido.get("id")  # Id del partido a mostrar.
+    )
+
+    await context.bot.edit_message_text(
+      chat_id=query.message.chat_id,
+      message_id=msg_id,
+      text=texto,
+      parse_mode="HTML",
+      reply_markup=reply_markup
+    )
   
   async def maniana(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Responde al comando /maniana.
     """
-    try:
-      estado_partidos = "pre-match"
-      
-      maniana = (date.today() + timedelta(days=1)).strftime("%d-%m-%Y")  # Fecha de mañana.
-      partidos = await self._api_service.obtener_partidos_estado_y_fecha(estado_partidos, maniana)  # Partidos en ese estado.
-      
-      texto = formatear_partidos(partidos)  # Formateado de los partidos.
-      await update.message.reply_html(texto)
-      
-    except Exception as e:
-      await update.message.reply_text(f"❌ Error obteniendo los partidos de mañana: {e}")
+    estado = "pre-match"
+    maniana = (date.today() + timedelta(days=1)).strftime("%d-%m-%Y")  # Fecha de mañana.
+    partidos = await self._api_service.obtener_partidos_estado_y_fecha(estado, maniana)  # Obtener los partidos.
+
+    if not partidos:
+      await update.message.reply_text("❌ No hay partidos para mostrar.")
+      return
+
+    # Carga de variables de utilidad:
+    scope = "maniana"
+    index = 0
+
+    context.user_data["maniana_estado"] = estado
+    context.user_data["maniana_partidos"] = partidos
+    context.user_data["maniana_index"] = index
+    context.user_data["scope_actual"] = scope
+
+    texto = formatear_partido(partidos[index])
+
+    # Construcción del teclado:
+    reply_markup = teclado_partido(
+      scope=scope,  # Para qué comando es el teclado.
+      index=index,  # Partido a mostrar.
+      total=len(partidos),  # Cantidad de partidos.
+      mostrar_previa=(partidos[index]["estado"] == "pre-match"),  # Solo si es un partido programado ofrece la posibilidad de consultar la previa.
+      id_partido=partidos[index].get("id")  # Id del partido a mostrar.
+    )
+
+    sent = await update.message.reply_html(texto, reply_markup=reply_markup)
+    context.user_data[f"{scope}_message_id"] = sent.message_id
     
   async def tabla(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -211,7 +251,7 @@ class CommandHandlerBot:
     
   async def equipo_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query  # Botón cliqueado.
-    await query.answer()
+    await query.answer("⏳ Cargando equipo…")
 
     id_equipo = query.data.replace("equipo_seleccionar_", "")  # Obtener id del equipo.
 
@@ -254,7 +294,7 @@ class CommandHandlerBot:
   
   async def equipo_plantel_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
+    await query.answer("⏳ Cargando plantel…")
 
     _, _, id_equipo, index = query.data.split("_")
     index = int(index)
@@ -304,7 +344,7 @@ class CommandHandlerBot:
 
   async def equipo_entrenador_callback(self, update: Update, contenxt: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
+    await query.answer("⏳ Cargando entrenador…")
     
     id_equipo = query.data.replace("equipo_entrenador_", "")
     
@@ -318,7 +358,7 @@ class CommandHandlerBot:
       
   async def equipo_racha_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
+    await query.answer("⏳ Cargando racha…")
     
     id_equipo = query.data.replace("equipo_racha_", "")
     
@@ -332,7 +372,7 @@ class CommandHandlerBot:
       
   async def equipo_proximos_partidos_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
+    await query.answer("⏳ Cargando próximos partidos…")
     
     id_equipo = query.data.replace("equipo_proximos_partidos_", "")
     
@@ -345,106 +385,87 @@ class CommandHandlerBot:
       await query.message.reply_text(f"❌ Error obteniendo próximos partidos: {e}")
   
   async def jornada(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """
-    Responde al comando /jornada
-    """
     try:
-      # Validación de argumentos:
+      # Si no se pasó un argumento:
       if len(context.args) != 1:
         await update.message.reply_text("❌ Usá: /jornada <número>")
         return
 
-      jornada = int(context.args[0])  # Obtener número de jornada.
-
-      # Validación del valor de la jornada:
+      jornada = int(context.args[0])  # Obtener argumento enviado junto al comando.
+      
+      # Validar que la jornada esté dentro del dominio:
       if jornada < 1 or jornada > 38:
-        await update.message.reply_text("❌ La jornada debe estar entre 1 y 38.")
+        await update.message.reply_text("❌ Las jornadas válidas son de la 1 a la 38.")
         return
 
-      partidos = await self._api_service.obtener_partidos_jornada(jornada)  # Obtener partidos de la jornada solicitada.
-
+      # Obtener partidos de la jornada:
+      partidos = await self._api_service.obtener_partidos_jornada(jornada)
       if not partidos:
         await update.message.reply_text("❌ No hay partidos para esta jornada.")
         return
 
+      # Carga de variables de utilidad:
+      scope = "jornada"
       index = 0
-      texto = formatear_partido(partidos[index])  # Formateo del primer partido de la jornada.
 
-      botones = []
+      context.user_data["jornada_partidos"] = partidos
+      context.user_data["jornada_index"] = index
+      context.user_data["jornada_numero"] = jornada
+      context.user_data["scope_actual"] = scope
 
-      # Si hay más de un partido en la jornada genera el botón para avanzar al siguiente:
-      if len(partidos) > 1:
-        botones.append(
-          InlineKeyboardButton(
-            "➡️",
-            callback_data=f"jornada_{jornada}_{index + 1}"
-          )
-        )
+      texto = formatear_partido(partidos[index])
 
-      reply_markup = InlineKeyboardMarkup([botones]) if botones else None
-
-      sent = await update.message.reply_html(
-        texto,
-        reply_markup=reply_markup
+      # Construcción del teclado:
+      reply_markup = teclado_partido(
+        scope=scope,  # Para qué comando es el teclado.
+        index=index,  # Partido a mostrar.
+        total=len(partidos),  # Cantidad de partidos.
+        mostrar_previa=(partidos[index]["estado"] == "pre-match"),  # Solo si es un partido programado ofrece la posibilidad de consultar la previa.
+        id_partido=partidos[index].get("id")  # Id del partido a mostrar.
       )
 
-      # Guardamos estado:
-      context.user_data["jornada_partidos"] = partidos
-      context.user_data["jornada_message_id"] = sent.message_id
-      context.user_data["jornada_actual"] = jornada
+      sent = await update.message.reply_html(texto, reply_markup=reply_markup)
+      context.user_data[f"{scope}_message_id"] = sent.message_id
 
-    except ValueError:
-      await update.message.reply_text("❌ El número de jornada debe ser un entero.")
     except Exception as e:
       await update.message.reply_text(f"❌ Error obteniendo la jornada: {e}")
 
-  async def jornada_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+  async def previa_partido_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
+    await query.answer("⏳ Cargando previa…")
 
-    _, jornada, index = query.data.split("_")  # Obtener jornada y página.
-    jornada = int(jornada)
-    index = int(index)
+    # Obtener id del partido:
+    _, id = query.data.split("_")
+    id_partido = int(id)
 
-    partidos = context.user_data.get("jornada_partidos")  # Recuperar partidos del contexto para no volver a consultar a la API.
+    # Obtener previa del partido:
+    cache_key = f"previa_{id_partido}"
+    previa = context.user_data.get(cache_key)
 
-    # En caso de que ya no estén los partidos cacheados:
-    if not partidos:
-      await query.message.reply_text("❌ La sesión expiró. Volvé a usar /jornada.")
-      return
+    # En caso de que no esté en cache, la solicita a la API:
+    if not previa:
+      previa = await self._api_service.obtener_previa_partido(id_partido)
+      context.user_data[cache_key] = previa  # Guarda en cache la previa para reducir solicitudes.
 
-    # Manejo de páginas inválidas:
-    if index < 0 or index >= len(partidos):
-      return
+    texto_previa = formatear_previa_partido(previa)
+    texto = f"{query.message.text}\n\n{texto_previa}"
 
-    texto = formatear_partido(partidos[index])  # Formateado del partido correspondiente a la página.
+    # Carga de variables de utilidad:
+    scope = context.user_data["scope_actual"]
+    index = context.user_data[f"{scope}_index"]
+    partidos = context.user_data[f"{scope}_partidos"]
 
-    botones = []
+    # Construcción del teclado:
+    reply_markup = teclado_partido(
+      scope=scope,  # Para qué comando es el teclado.
+      index=index,  # Partido a mostrar.
+      total=len(partidos),  # Cantidad de partidos.
+      mostrar_previa=False,  # No se muestra el botón de ver previa ya que se agrega la misma al mensaje del partido.
+      id_partido=id_partido  # Id del partido.
+    )
 
-    # Botón para partido anterior si no es el primero de la jornada:
-    if index > 0:
-      botones.append(
-        InlineKeyboardButton(
-          "⬅️",
-          callback_data=f"jornada_{jornada}_{index - 1}"
-        )
-      )
-
-    # Botón para partido siguiente si no es el último de la jornada:
-    if index < len(partidos) - 1:
-      botones.append(
-        InlineKeyboardButton(
-          "➡️",
-          callback_data=f"jornada_{jornada}_{index + 1}"
-        )
-      )
-
-    reply_markup = InlineKeyboardMarkup([botones]) if botones else None
-
-    await context.bot.edit_message_text(
-      chat_id=query.message.chat_id,
-      message_id=context.user_data["jornada_message_id"],
-      text=texto,
-      reply_markup=reply_markup,
-      parse_mode="HTML"
+    await query.message.edit_text(
+      texto,
+      parse_mode="HTML",
+      reply_markup=reply_markup
     )
