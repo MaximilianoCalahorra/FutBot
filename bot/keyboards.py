@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-def teclado_partido(scope, index, total, mostrar_previa, id_partido):
+def teclado_partido(scope, index, total, mostrar_previa, id_partido, mostrar_historial=False, id_partido_football_data=None):
   botones = []
   fila = []
 
@@ -23,6 +23,12 @@ def teclado_partido(scope, index, total, mostrar_previa, id_partido):
   if mostrar_previa and id_partido:
     botones.append([
       InlineKeyboardButton("📝 Ver previa", callback_data=f"previa_{id_partido}")
+    ])
+  
+  # Si el partido tiene su id y hay que mostrar el historial:
+  if mostrar_historial and id_partido_football_data:
+    botones.append([
+      InlineKeyboardButton("📊 Ver historial", callback_data=f"historial_{id_partido_football_data}")
     ])
 
   return InlineKeyboardMarkup(botones)
