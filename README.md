@@ -32,15 +32,15 @@ futbot/
 
 ## ⚙️ Comandos implementados
 
-| Comando       | Descripción                                                                 |
-| ------------- | --------------------------------------------------------------------------- |
-| `/start`      | Da la bienvenida y explica las funciones del bot.                           |
-| `/ayuda`      | Lista todos los comandos disponibles.                                       |
-| `/hoy`        | Muestra los partidos del día en La Liga.                                    |
-| `/tabla`      | Muestra la tabla de posiciones actualizada.                                 |
-| `/goleadores` | Muestra el top 10 de máximos goleadores del campeonato.                     |
-| `/equipo`     | Permite explorar información detallada de un equipo mediante botoneras.    |
-| `/jornada <número>`     | Muestra los partidos de la jornada solicitada.    |
+| Comando             | Descripción                                                             |
+| ------------------- | ----------------------------------------------------------------------- |
+| `/start`            | Da la bienvenida y explica las funciones del bot.                       |
+| `/ayuda`            | Lista todos los comandos disponibles.                                   |
+| `/hoy`              | Muestra los partidos del día en La Liga.                                |
+| `/tabla`            | Muestra la tabla de posiciones actualizada.                             |
+| `/goleadores`       | Muestra el top 10 de máximos goleadores del campeonato.                 |
+| `/equipos`           | Permite explorar información detallada de un equipo mediante botoneras. |
+| `/jornada <número>` | Muestra los partidos de la jornada solicitada.                          |
 
 ---
 
@@ -201,14 +201,14 @@ Este comando permite tener una vista rápida del rendimiento ofensivo de la liga
 
 ---
 
-### 🛡️ Comando `/equipo`
+### 🛡️ Comando `/equipos`
 
-El comando `/equipo` permite al usuario explorar información detallada de los clubes de La Liga
+El comando `/equipos` permite al usuario explorar información detallada de los clubes de La Liga
 de forma interactiva mediante **botoneras y navegación por callbacks**.
 
 #### 🔹 Flujo de uso
 
-1. El usuario ejecuta el comando: `/equipo`
+1. El usuario ejecuta el comando: `/equipos`
 
 2. El bot muestra una lista de equipos mediante botones inline.
 
@@ -348,6 +348,12 @@ El comando `/jornada <número>` muestra los partidos de La Liga correspondientes
     - 🔥 Nivel de expectativa
     
     - 📝 Análisis de cómo llegan ambos equipos al encuentro y qué se puede esperar del mismo
+
+6. En todos los encuentros, sin importar su estado, el bot ofrece un botón para consultar el historial de enfrentamientos entre los equipos. Este historial consta de:
+
+    - 🏁 Últimos 5 partidos finalizados con el resultado
+
+    - 📊 Cantidad de victorias de cada equipo y de empates sobre estos 5 encuentros
 
 El formato se adapta dinámicamente según el estado del partido, y cada partido se presenta en un mensaje, pudiendo recorrer los mismos mediante botones.
 

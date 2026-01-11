@@ -54,6 +54,7 @@ class FutBot:
     self._application.add_handler(CallbackQueryHandler(self._command_handler.hoy_callback, pattern="^hoy_partidos_"))
     self._application.add_handler(CallbackQueryHandler(self._command_handler.navegar_partido_callback, pattern="^nav_"))
     self._application.add_handler(CallbackQueryHandler(self._command_handler.previa_partido_callback, pattern="^previa_"))
+    self._application.add_handler(CallbackQueryHandler(self._command_handler.historial_callback, pattern="^historial_"))
   
   def run(self):
     """

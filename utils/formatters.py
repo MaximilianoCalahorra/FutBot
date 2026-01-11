@@ -137,7 +137,9 @@ def formatear_evento(evento, local, visitante):
 
 def formatear_eventos(eventos, local, visitante):
   if len(eventos) > 0:
-    return "\n".join(formatear_evento(e, local, visitante) for e in eventos)
+    titulo = "\n📌 Eventos:\n"
+    eventos_formateados = "\n".join(formatear_evento(e, local, visitante) for e in eventos)
+    return f"{titulo}{eventos_formateados}"
   return "\n"
 
 def formatear_clima(descripcion: str, temp_c: float | None = None) -> str:
@@ -231,13 +233,18 @@ def formatear_partido(partido):
     visitante_eventos = visitante
  
   eventos_formateados = formatear_eventos(eventos, local_eventos, visitante_eventos) if eventos else ""
+  
+  historial = ""
+  if partido.get("id_partido_football_data", "") == "":
+    historial = f"ℹ️ El historial de enfrentamientos está disponible solo cuando se consulta una jornada específica."
 
   # Según el estado del partido lo mostramos de diferente manera:
   if estado == "pre-match":  # Partido a futuro.
     return (
       f"🕒 {fecha} {hora}\n"
       f"{local} vs {visitante}\n\n"
-      f"{previa_partido}"
+      f"{historial}\n"
+      f"{previa_partido}\n"
     )
 
   elif estado in ("live", "halftime"):  # Partido en juego o en el descanso.
@@ -248,7 +255,8 @@ def formatear_partido(partido):
       f"🕒 {fecha} {hora}\n"
       f"{tiempo}"
       f"{local} {partido['marcador']} {visitante}\n"
-      f"\n📌 Eventos:\n{eventos_formateados}\n\n"
+      f"{eventos_formateados}\n"
+      f"{historial}"
     )
 
   elif estado == "finished":  # Partido finalizado.
@@ -256,13 +264,15 @@ def formatear_partido(partido):
       f"🕒 {fecha} {hora}\n"
       f"🏁 Finalizado\n"
       f"{local} {partido['marcador']} {visitante}\n"
-      f"\n📌 Eventos:\n{eventos_formateados}\n\n"
+      f"{eventos_formateados}\n"
+      f"{historial}"
     )
   
   elif estado == "postponed":  # Partido pospuesto.
     return (
       f"📅 ➡️ ⚽ Pospuesto\n"
       f"{local} vs {visitante}\n\n"
+      f"{historial}"
     )
 
 def formatear_partidos(partidos):
@@ -505,3 +515,55 @@ def construir_texto_previa(preview_content: list[dict]) -> str:
       partes.append(bloque["content"])
 
   return "\n\n---\n\n".join(partes)
+
+def formatear_partido_historial(partido):
+  local = partido["local"]
+  visitante = partido["visitante"]
+  fecha = partido["fecha"]
+  hora = partido["hora"]
+  
+  return (
+    f"🕒 {fecha} {hora}\n"
+    f"🏁 Finalizado\n"
+    f"{local} {partido['marcador']} {visitante}\n\n"
+  )
+
+def formatear_conteo_resultados_historial(partidos):
+  # Nombres de los equipos:
+  equipo_1 = partidos[0]["local"]
+  equipo_2 = partidos[0]["visitante"]
+  
+  # Contador de resultados:
+  victorias_equipo_1 = 0
+  victorias_equipo_2 = 0
+  empates = 0
+  
+  # Contar resultados:
+  for p in partidos:
+    ganador = p["ganador"]
+    if ganador == equipo_1:
+      victorias_equipo_1 += 1
+    elif ganador == equipo_2:
+      victorias_equipo_2 += 1
+    else:
+      empates += 1
+  
+  return (
+    f"{equipo_1}: {victorias_equipo_1} victoria/s\n"
+    f"Empates: {empates}\n"
+    f"{equipo_2}: {victorias_equipo_2} victoria/s\n"
+  )
+
+def formatear_partidos_historial(partidos):
+  if not partidos:
+    return "❌ No hay partidos previos entre ambos equipos."
+
+  # Formateo de cada partido:
+  mensaje = "📊 <b>Historial</b>\n\n"
+  for p in partidos:
+    mensaje += formatear_partido_historial(p)
+  
+  # Formateo del conteo de resultados:
+  mensaje += formatear_conteo_resultados_historial(partidos)
+
+  return mensaje.strip()
