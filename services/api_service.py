@@ -410,6 +410,7 @@ class ApiService:
       
       # Selecciono los datos que me interesan para cada partido:
       partido_jornada = {
+        "id_partido_football_data": partido["id"],
         "fecha": partido["fecha"],
         "hora": partido["hora"],
         "estado": estado,
@@ -492,3 +493,57 @@ class ApiService:
       }
     
     return previa
+  
+  async def obtener_historial_enfrentamientos(self, id_partido):
+    url = f"{self._football_data_api_url_base}matches/{id_partido}/head2head"
+    
+    headers = {
+      "X-Auth-Token": self._api_key_football_data,
+      "User-Agent": "FutBot/1.0"
+    }
+    
+    async with self._session.get(url, headers=headers) as response:
+      data = await response.json()
+      
+    historial_completo = data["matches"]
+    
+    # Me interesan solo los partidos de liga:
+    historial_liga = []
+    for partido in historial_completo:
+      if partido["competition"]["code"] == self._id_liga_football_data:
+        historial_liga.append(partido)
+    
+    # Me quedo con los últimos partidos que disputaron y extraigo información sobre ellos:
+    ultimos_enfrentamientos_liga_completo = historial_liga[:5]
+    ultimos_partidos = []
+    for enfrentamiento in ultimos_enfrentamientos_liga_completo:
+      # Solo me interesan partidos que hayan finalizado:
+      if enfrentamiento["status"] == "FINISHED":
+        fecha, hora = convertir_a_zona_horaria_argentina(enfrentamiento["utcDate"])
+        marcador_local = enfrentamiento["score"]["fullTime"]["home"]
+        marcador_visitante = enfrentamiento["score"]["fullTime"]["away"]
+        local = TEAMS[normalizar_equipo(enfrentamiento["homeTeam"]["name"])]["canonical"]
+        visitante = TEAMS[normalizar_equipo(enfrentamiento["awayTeam"]["name"])]["canonical"]
+        
+        ganador_api = enfrentamiento["score"]["winner"]
+        if ganador_api == "HOME_TEAM":
+          ganador = local
+        elif ganador_api == "AWAY_TEAM":
+          ganador = visitante
+        elif ganador_api == "DRAW":
+          ganador = "empate"
+        
+        # Carga del partido con la información recolectada:
+        partido = {
+          "fecha": fecha,
+          "hora": hora,
+          "jornada": enfrentamiento["matchday"],
+          "local": local,
+          "visitante": visitante,
+          "marcador": f"{marcador_local} - {marcador_visitante}",
+          "ganador": ganador
+        }
+        
+        ultimos_partidos.append(partido)
+    
+    return ultimos_partidos

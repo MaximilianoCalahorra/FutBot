@@ -1,7 +1,7 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from datetime import date, timedelta
-from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha, formatear_proximos_partidos, formatear_previa_partido
+from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha, formatear_proximos_partidos, formatear_previa_partido, formatear_partidos_historial
 from bot.keyboards import teclado_partido
 
 class CommandHandlerBot:
@@ -140,7 +140,9 @@ class CommandHandlerBot:
       index=index,  # Partido a mostrar.
       total=len(partidos),  # Cantidad de partidos.
       mostrar_previa=(partido["estado"] == "pre-match"),  # Solo si es un partido programado ofrece la posibilidad de consultar la previa.
-      id_partido=partido.get("id")  # Id del partido a mostrar.
+      id_partido=partidos[index].get("id"),  # Id del partido.
+      mostrar_historial=True,
+      id_partido_football_data=partidos[index].get("id_partido_football_data")  # Id del partido en FootballData.
     )
 
     await context.bot.edit_message_text(
@@ -421,7 +423,9 @@ class CommandHandlerBot:
         index=index,  # Partido a mostrar.
         total=len(partidos),  # Cantidad de partidos.
         mostrar_previa=(partidos[index]["estado"] == "pre-match"),  # Solo si es un partido programado ofrece la posibilidad de consultar la previa.
-        id_partido=partidos[index].get("id")  # Id del partido a mostrar.
+        id_partido=partidos[index].get("id"),  # Id del partido.
+        mostrar_historial=True,
+        id_partido_football_data=partidos[index].get("id_partido_football_data")  # Id del partido en FootballData.
       )
 
       sent = await update.message.reply_html(texto, reply_markup=reply_markup)
@@ -454,6 +458,14 @@ class CommandHandlerBot:
     scope = context.user_data["scope_actual"]
     index = context.user_data[f"{scope}_index"]
     partidos = context.user_data[f"{scope}_partidos"]
+    
+    # Si la solicitud provino de la parte de las jornadas:
+    if scope == "jornada":
+      # Me interesa saber si ya se solicitó la previa y/o el historial de este partido para habilitar/deshabilitar los botones de consulta:
+      jornada = context.user_data["jornada_numero"]
+      context.user_data[f"previa_{jornada}_{index}"] = True  # Guardo en el contexto del usuario que ya se solicitó la previa de este partido.
+      
+      historial_mostrado = context.user_data.get(f"historial_{jornada}_{index}", False)  # Consulto en el contexto del usuario si ya se solicitó el historial de este partido.
 
     # Construcción del teclado:
     reply_markup = teclado_partido(
@@ -461,7 +473,59 @@ class CommandHandlerBot:
       index=index,  # Partido a mostrar.
       total=len(partidos),  # Cantidad de partidos.
       mostrar_previa=False,  # No se muestra el botón de ver previa ya que se agrega la misma al mensaje del partido.
-      id_partido=id_partido  # Id del partido.
+      id_partido=id_partido,  # Id del partido.
+      mostrar_historial=(scope not in ("hoy", "maniana") and not historial_mostrado),  # No se muestra el botón de ver historial ya que se agrega el mismo al mensaje del partido.
+      id_partido_football_data=partidos[index].get("id_partido_football_data")  # Id del partido en FootballData.
+    )
+
+    await query.message.edit_text(
+      texto,
+      parse_mode="HTML",
+      reply_markup=reply_markup
+    )
+  
+  async def historial_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer("⏳ Cargando historial")
+
+    # Obtener id del partido:
+    _, id = query.data.split("_")
+    id_partido = int(id)
+
+    # Obtener historial de enfrentamientos:
+    cache_key = f"historial_{id_partido}"
+    historial = context.user_data.get(cache_key)
+
+    # En caso de que no esté en cache, lo solicita a la API:
+    if not historial:
+      historial = await self._api_service.obtener_historial_enfrentamientos(id_partido)
+      context.user_data[cache_key] = historial  # Guarda en cache el historial para reducir solicitudes.
+
+    texto_historial = formatear_partidos_historial(historial)
+    texto = f"{query.message.text}\n\n{texto_historial}"
+
+    # Carga de variables de utilidad:
+    scope = context.user_data["scope_actual"]
+    index = context.user_data[f"{scope}_index"]
+    partidos = context.user_data[f"{scope}_partidos"]
+    
+    # Si la solicitud provino de la parte de las jornadas:
+    if scope == "jornada":
+      # Me interesa saber si ya se solicitó la previa y/o el historial de este partido para habilitar/deshabilitar los botones de consulta:
+      jornada = context.user_data["jornada_numero"]
+      context.user_data[f"historial_{jornada}_{index}"] = True  # Guardo en el contexto del usuario que ya se solicitó el historial de este partido.
+      
+      previa_mostrada = context.user_data.get(f"previa_{jornada}_{index}", False)  # Consulto en el contexto del usuario si ya se solicitó la previa de este partido.
+
+    # Construcción del teclado:
+    reply_markup = teclado_partido(
+      scope=scope,  # Para qué comando es el teclado.
+      index=index,  # Partido a mostrar.
+      total=len(partidos),  # Cantidad de partidos.
+      mostrar_previa=(partidos[index]["estado"] == "pre-match" and not previa_mostrada),  # Solo si es un partido programado ofrece la posibilidad de consultar la previa.
+      id_partido=partidos[index].get("id"),  # Id del partido.
+      mostrar_historial=False,  # No se muestra el botón de ver historial ya que se agrega el mismo al mensaje del partido.
+      id_partido_football_data=partidos[index].get("id_partido_football_data")  # Id del partido en FootballData.
     )
 
     await query.message.edit_text(
