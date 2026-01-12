@@ -389,6 +389,7 @@ El archivo `.env` debe incluir las siguientes variables:
 TELEGRAM_TOKEN=tu_token_de_telegram
 FOOTBALL_DATA_ORG_API_KEY=tu_api_key_de_football_data_org
 SOCCERDATA_API_KEY=tu_api_key_de_soccerdata
+GROQ_API_KEY=tu_api_key_de_groq
 ```
 
 📄 En el repositorio hay un `.env.example` para guiar la configuración inicial.

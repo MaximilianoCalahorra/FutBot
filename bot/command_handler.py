@@ -2,7 +2,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from datetime import date, timedelta
 from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha, formatear_proximos_partidos, formatear_previa_partido, formatear_partidos_historial
-from bot.keyboards import teclado_partido
+from bot.keyboards import teclado_partido, teclado_partidos_hoy, teclado_equipos, teclado_equipo, teclado_plantel
 
 class CommandHandlerBot:
   """
@@ -51,23 +51,12 @@ class CommandHandlerBot:
     """
     try:
       # Armado de la botonera:
-      botonera = []
       textos = ["🕒 Programados", "⏳ En juego", "🏁 Finalizados", "📅 ➡️ ⚽ Pospuestos"]
       callbacks = ["hoy_partidos_pre-match_0", "hoy_partidos_live_0", "hoy_partidos_finished_0", "hoy_partidos_postponed_0"]
       
-      for i in range(len(textos)):
-        botonera.append([
-          InlineKeyboardButton(
-            text=textos[i],
-            callback_data=callbacks[i]
-          )
-        ])
-      
-      reply_markup = InlineKeyboardMarkup(botonera)
-      
       await update.message.reply_text(
         "⚽ Seleccioná un estado de los partidos:",
-        reply_markup=reply_markup
+        reply_markup=teclado_partidos_hoy(textos, callbacks)
       )
       
     except Exception as e:
@@ -218,34 +207,9 @@ class CommandHandlerBot:
       # Listado de equipos:
       equipos = await self._api_service.obtener_equipos()
 
-      # Armado de la botonera:
-      botonera = []  # Botonera final con el listado de filas.
-      fila = []  # Listado de elementos por fila.
-
-      # Recorrer equipos:
-      for i, equipo in enumerate(equipos, start=1):
-        # Agrega un equipo a la fila:
-        fila.append(
-          InlineKeyboardButton(
-            text=equipo["nombre"],  # Nombre del equipo.
-            callback_data=f"equipo_seleccionar_{equipo['id']}"  # Callback con el id del equipo.
-          )
-        )
-
-        # Genera hasta 2 botones por fila:
-        if i % 2 == 0:
-          botonera.append(fila)
-          fila = []
-
-      # Fila extra si la cantidad de equipos es impar:
-      if fila:
-        botonera.append(fila)
-
-      reply_markup = InlineKeyboardMarkup(botonera)  # Botonera en formato aceptado por Telegram.
-
       await update.message.reply_text(
         "🛡️ Seleccioná un equipo:",
-        reply_markup=reply_markup
+        reply_markup=teclado_equipos(equipos)
       )
 
     except Exception as e:
@@ -261,35 +225,9 @@ class CommandHandlerBot:
       equipo = await self._api_service.obtener_equipo(id_equipo)  # Obtener equipo por su id.
       mensaje = formatear_equipo(equipo)  # Formatear mensaje con la información del equipo.
       
-      # Botones de plantel y entrenador del equipo:
-      botonera = [
-        [
-          InlineKeyboardButton(
-            text="👥 Plantel",
-            callback_data=f"equipo_plantel_{id_equipo}_0"
-          ),
-          InlineKeyboardButton(
-            text="👔 Entrenador",
-            callback_data=f"equipo_entrenador_{id_equipo}"
-          )
-        ],
-        [
-          InlineKeyboardButton(
-            text="⚡ Racha",
-            callback_data=f"equipo_racha_{id_equipo}"
-          ),
-          InlineKeyboardButton(
-            text="🗓️ Próximos partidos",
-            callback_data=f"equipo_proximos_partidos_{id_equipo}"
-          )
-        ]
-      ]
-      
-      reply_markup = InlineKeyboardMarkup(botonera)
-
       await query.message.reply_html(
         mensaje,
-        reply_markup=reply_markup)
+        reply_markup=teclado_equipo(id_equipo))
 
     except Exception as e:
       await query.message.reply_text(f"❌ Error obteniendo equipo: {e}")
@@ -310,20 +248,12 @@ class CommandHandlerBot:
 
     grupo, jugadores = grupos[index]
     texto = formatear_grupo_plantel(grupo, jugadores)
-
-    botones = []
-
-    if index > 0:
-      botones.append(
-        InlineKeyboardButton("⬅️", callback_data=f"equipo_plantel_{id_equipo}_{index-1}")
-      )
-
-    if index < len(grupos) - 1:
-      botones.append(
-        InlineKeyboardButton("➡️", callback_data=f"equipo_plantel_{id_equipo}_{index+1}")
-      )
-
-    reply_markup = InlineKeyboardMarkup([botones])
+    
+    reply_markup = teclado_plantel(
+      index=index,
+      total=len(grupos),
+      id_equipo=id_equipo
+    )
 
     plantel_msg_id = context.user_data.get("plantel_message_id")
 
