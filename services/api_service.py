@@ -1,6 +1,7 @@
 import aiohttp
 from utils.formatters import convertir_a_zona_horaria_argentina, normalizar_estado_partido, construir_texto_previa
 from utils.teams import normalizar_equipo, TEAMS
+from services.http_utils import procesar_respuesta
 
 class ApiService:
   def __init__(self, config, groq_service):
@@ -32,7 +33,7 @@ class ApiService:
 
     # Consultar:
     async with self._session.get(url, headers=headers) as response:
-      data = await response.json()
+      data = await procesar_respuesta(response)
 
     # Tabla completa:
     clasificacion_completa = data["standings"][0]["table"]
@@ -60,7 +61,7 @@ class ApiService:
     url = f"{self._soccerdata_api_url_base}matches/?league_id={self._id_liga_soccerdata}&date={fecha}&auth_token={self._api_key_soccerdata}"
     
     async with self._session.get(url) as response:
-      data = await response.json()
+      data = await procesar_respuesta(response)
     
     partidos_completo = data[0]["stage"][0]["matches"] if data[0].get("stage") else []
     partidos = []
@@ -125,7 +126,7 @@ class ApiService:
     
     # Consultar:
     async with self._session.get(url, headers=headers) as response:
-      data = await response.json()
+      data = await procesar_respuesta(response)
     
     goleadores_completo = data["scorers"]
     
@@ -156,7 +157,7 @@ class ApiService:
     
     # Consultar:
     async with self._session.get(url, headers=headers) as response:
-      data = await response.json()
+      data = await procesar_respuesta(response)
         
     equipos_completo = data["teams"]
     
@@ -179,7 +180,7 @@ class ApiService:
     
     # Consultar:
     async with self._session.get(url, headers=headers) as response:
-      data = await response.json()
+      data = await procesar_respuesta(response)
     
     equipo = {
       "nombre": TEAMS[normalizar_equipo(data["name"])]["canonical"],
@@ -202,7 +203,7 @@ class ApiService:
     }
     
     async with self._session.get(url, headers=headers) as response:
-      data = await response.json()
+      data = await procesar_respuesta(response)
     
     plantel = []
     plantel_completo = data["squad"]
@@ -228,7 +229,7 @@ class ApiService:
     }
     
     async with self._session.get(url, headers=headers) as response:
-      data = await response.json()
+      data = await procesar_respuesta(response)
     
     entrenador_completo = data["coach"]
     
@@ -251,7 +252,7 @@ class ApiService:
     }
     
     async with self._session.get(url, headers=headers) as response:
-      data = await response.json()
+      data = await procesar_respuesta(response)
         
     todos_partidos = data["matches"]  # Todos los partidos del equipo en la temporada.
     
@@ -300,7 +301,7 @@ class ApiService:
     }
     
     async with self._session.get(url, headers=headers) as response:
-      data = await response.json()
+      data = await procesar_respuesta(response)
     
     todos_partidos = data["matches"]  # Todos los partidos del equipo en la temporada.
     
@@ -344,7 +345,7 @@ class ApiService:
     url = f"{self._soccerdata_api_url_base}matches?league_id={self._id_liga_soccerdata}&date={fecha}&auth_token={self._api_key_soccerdata}"
     
     async with self._session.get(url) as response:
-      data = await response.json()
+      data = await procesar_respuesta(response)
     
     partidos_completo = data[0]["stage"][0]["matches"] if data[0].get("stage") else []  # Respuesta completa de la API sobre los partidos.
     
@@ -373,7 +374,7 @@ class ApiService:
     }
     
     async with self._session.get(url, headers=headers) as response:
-      data = await response.json()
+      data = await procesar_respuesta(response)
     
     partidos_jornada_completo = data["matches"]  # Partidos completos desde la API.
     
@@ -476,7 +477,7 @@ class ApiService:
     url = f"{self._soccerdata_api_url_base}match-preview/?match_id={id_partido}&auth_token={self._api_key_soccerdata}"
     
     async with self._session.get(url) as response:
-      data = await response.json()
+      data = await procesar_respuesta(response)
     
     if response.status == 400 or response.status == 404 or response.status == 429:
       previa = None
@@ -503,7 +504,7 @@ class ApiService:
     }
     
     async with self._session.get(url, headers=headers) as response:
-      data = await response.json()
+      data = await procesar_respuesta(response)
       
     historial_completo = data["matches"]
     
