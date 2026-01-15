@@ -2,6 +2,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from datetime import date, timedelta
 from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha, formatear_proximos_partidos, formatear_previa_partido, formatear_partidos_historial
+from utils.handler_utils import ejecutar_con_manejo
 from bot.keyboards import teclado_partido, teclado_partidos_hoy, teclado_equipos, teclado_equipo, teclado_plantel
 
 class CommandHandlerBot:
@@ -49,18 +50,14 @@ class CommandHandlerBot:
     """
     Responde al comando /hoy.
     """
-    try:
-      # Armado de la botonera:
-      textos = ["🕒 Programados", "⏳ En juego", "🏁 Finalizados", "📅 ➡️ ⚽ Pospuestos"]
-      callbacks = ["hoy_partidos_pre-match_0", "hoy_partidos_live_0", "hoy_partidos_finished_0", "hoy_partidos_postponed_0"]
-      
-      await update.message.reply_text(
-        "⚽ Seleccioná un estado de los partidos:",
-        reply_markup=teclado_partidos_hoy(textos, callbacks)
-      )
-      
-    except Exception as e:
-      await update.message.reply_text(f"❌ Error obteniendo los partidos de hoy: {e}")
+    # Armado de la botonera:
+    textos = ["🕒 Programados", "⏳ En juego", "🏁 Finalizados", "📅 ➡️ ⚽ Pospuestos"]
+    callbacks = ["hoy_partidos_pre-match_0", "hoy_partidos_live_0", "hoy_partidos_finished_0", "hoy_partidos_postponed_0"]
+    
+    await update.message.reply_text(
+      "⚽ Seleccioná un estado de los partidos:",
+      reply_markup=teclado_partidos_hoy(textos, callbacks)
+    )
 
   async def hoy_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -69,10 +66,15 @@ class CommandHandlerBot:
     _, _, estado, _ = query.data.split("_")  # Obtener estado de los partidos solicitados.
 
     hoy = date.today().strftime("%d-%m-%Y")  # Fecha de hoy.
-    partidos = await self._api_service.obtener_partidos_estado_y_fecha(estado, hoy)
-
+    
+    partidos = await ejecutar_con_manejo(
+      update,
+      lambda: self._api_service.obtener_partidos_estado_y_fecha(estado, hoy),
+      mensaje_not_found="ℹ️ No hay partidos para mostrar."
+    )
+    
     if not partidos:
-      await query.message.reply_text("❌ No hay partidos para mostrar.")
+      await query.message.reply_text("ℹ️ No hay partidos para mostrar.")
       return
 
     # Carga de valores útiles:
@@ -148,10 +150,15 @@ class CommandHandlerBot:
     """
     estado = "pre-match"
     maniana = (date.today() + timedelta(days=1)).strftime("%d-%m-%Y")  # Fecha de mañana.
-    partidos = await self._api_service.obtener_partidos_estado_y_fecha(estado, maniana)  # Obtener los partidos.
-
+    
+    partidos = await ejecutar_con_manejo(
+      update,
+      lambda: self._api_service.obtener_partidos_estado_y_fecha(estado, maniana),
+      mensaje_not_found="ℹ️ No hay partidos para mostrar."
+    )
+    
     if not partidos:
-      await update.message.reply_text("❌ No hay partidos para mostrar.")
+      await update.message.reply_text("ℹ️ No hay partidos para mostrar.")
       return
 
     # Carga de variables de utilidad:
@@ -181,39 +188,52 @@ class CommandHandlerBot:
     """
     Responde al comando /tabla.
     """
-    try:
-      clasificacion = await self._api_service.obtener_clasificacion()
-      mensaje = formatear_clasificacion_tabla(clasificacion)
-      await update.message.reply_html(mensaje)
-    except Exception as e:
-      await update.message.reply_text(f"❌ Error obteniendo la tabla: {e}")
+    clasificacion = await ejecutar_con_manejo(
+      update,
+      lambda: self._api_service.obtener_clasificacion(),
+      mensaje_not_found="ℹ️ No se pudo obtener la tabla de posiciones."
+    )
+    
+    if not clasificacion:
+      return
+    
+    mensaje = formatear_clasificacion_tabla(clasificacion)
+    await update.message.reply_html(mensaje)
     
   async def goleadores(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Responde al comando /goleadores.
     """
-    try:
-      goleadores = await self._api_service.obtener_goleadores()
-      mensaje = formatear_goleadores(goleadores)
-      await update.message.reply_html(mensaje)
-    except Exception as e:
-      await update.message.reply_text(f" Error obteniendo los goleadores: {e}")
+    goleadores = await ejecutar_con_manejo(
+      update,
+      lambda: self._api_service.obtener_goleadores(),
+      mensaje_not_found="ℹ️ No se pudo obtener el ranking de goleadores."
+    )
+    
+    if not goleadores:
+      return
+    
+    mensaje = formatear_goleadores(goleadores)
+    await update.message.reply_html(mensaje)
   
   async def equipos(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Responde al comando /equipos
     """
-    try:
-      # Listado de equipos:
-      equipos = await self._api_service.obtener_equipos()
+    # Listado de equipos:
+    equipos = await ejecutar_con_manejo(
+      update,
+      lambda: self._api_service.obtener_equipos(),
+      mensaje_not_found="ℹ️ No se pudo obtener los equipos."
+    )
+    
+    if not equipos:
+      return
 
-      await update.message.reply_text(
-        "🛡️ Seleccioná un equipo:",
-        reply_markup=teclado_equipos(equipos)
-      )
-
-    except Exception as e:
-      await update.message.reply_text(f"❌ Error cargando equipos: {e}")
+    await update.message.reply_text(
+      "🛡️ Seleccioná un equipo:",
+      reply_markup=teclado_equipos(equipos)
+    )
     
   async def equipo_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query  # Botón cliqueado.
@@ -221,16 +241,20 @@ class CommandHandlerBot:
 
     id_equipo = query.data.replace("equipo_seleccionar_", "")  # Obtener id del equipo.
 
-    try:
-      equipo = await self._api_service.obtener_equipo(id_equipo)  # Obtener equipo por su id.
-      mensaje = formatear_equipo(equipo)  # Formatear mensaje con la información del equipo.
-      
-      await query.message.reply_html(
-        mensaje,
-        reply_markup=teclado_equipo(id_equipo))
-
-    except Exception as e:
-      await query.message.reply_text(f"❌ Error obteniendo equipo: {e}")
+    equipo = await ejecutar_con_manejo(
+      update,
+      lambda: self._api_service.obtener_equipo(id_equipo),  # Obtener equipo por su id.
+      mensaje_not_found="ℹ️ No se pudo obtener el equipo."
+    )
+    
+    if not equipo:
+      return
+    
+    mensaje = formatear_equipo(equipo)
+    await query.message.reply_html(
+      mensaje,
+      reply_markup=teclado_equipo(id_equipo)
+    )
   
   async def equipo_plantel_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -239,11 +263,19 @@ class CommandHandlerBot:
     _, _, id_equipo, index = query.data.split("_")
     index = int(index)
 
-    plantel = await self._api_service.obtener_plantel(id_equipo)
+    plantel = await ejecutar_con_manejo(
+      update,
+      lambda: self._api_service.obtener_plantel(id_equipo),
+      mensaje_not_found="ℹ️ No se pudo obtener el plantel."
+    )
+    
+    if not plantel:
+      return
+    
     grupos = agrupar_plantel_por_posicion(plantel)
     
     if index < 0 or index >= len(grupos):
-      await query.message.reply_text("❌ No hay más posiciones para mostrar.")
+      await query.message.reply_text("ℹ️ No hay más posiciones para mostrar.")
       return
 
     grupo, jugadores = grupos[index]
@@ -280,13 +312,17 @@ class CommandHandlerBot:
     
     id_equipo = query.data.replace("equipo_entrenador_", "")
     
-    try:
-      entrenador = await self._api_service.obtener_entrenador(id_equipo)
-      mensaje = formatear_entrenador(entrenador)
-      
-      await query.message.reply_html(mensaje)
-    except Exception as e:
-      await query.message.reply_text(f"❌ Error obteniendo entrenador: {e}")
+    entrenador = await ejecutar_con_manejo(
+      update,
+      lambda: self._api_service.obtener_entrenador(id_equipo),
+      mensaje_not_found="ℹ️ No se pudo obtener al entrenador."
+    )
+    
+    if not entrenador:
+      return
+         
+    mensaje = formatear_entrenador(entrenador)
+    await query.message.reply_html(mensaje)
       
   async def equipo_racha_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -294,13 +330,17 @@ class CommandHandlerBot:
     
     id_equipo = query.data.replace("equipo_racha_", "")
     
-    try:
-      racha = await self._api_service.obtener_racha(id_equipo)
-      mensaje = formatear_racha(racha, id_equipo)
-      
-      await query.message.reply_html(mensaje)
-    except Exception as e:
-      await query.message.reply_text(f"❌ Error obteniendo racha: {e}")
+    racha = await ejecutar_con_manejo(
+      update,
+      lambda: self._api_service.obtener_racha(id_equipo),
+      mensaje_not_found="ℹ️ No se pudo obtener la racha."
+    )
+    
+    if not racha:
+      return
+    
+    mensaje = formatear_racha(racha, id_equipo)
+    await query.message.reply_html(mensaje)
       
   async def equipo_proximos_partidos_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -308,61 +348,65 @@ class CommandHandlerBot:
     
     id_equipo = query.data.replace("equipo_proximos_partidos_", "")
     
-    try:
-      proximos_partidos = await self._api_service.obtener_proximos_partidos(id_equipo)
-      mensaje = formatear_proximos_partidos(proximos_partidos, id_equipo)
-      
-      await query.message.reply_html(mensaje)
-    except Exception as e:
-      await query.message.reply_text(f"❌ Error obteniendo próximos partidos: {e}")
+    proximos_partidos = await ejecutar_con_manejo(
+      update,
+      lambda: self._api_service.obtener_proximos_partidos(id_equipo),
+      mensaje_not_found="ℹ️ No se pudo obtener los próximos partidos."
+    )
+    
+    if not proximos_partidos:
+      return
+    
+    mensaje = formatear_proximos_partidos(proximos_partidos, id_equipo)
+    await query.message.reply_html(mensaje)
   
   async def jornada(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-      # Si no se pasó un argumento:
-      if len(context.args) != 1:
-        await update.message.reply_text("❌ Usá: /jornada <número>")
-        return
+    # Si no se pasó un argumento:
+    if len(context.args) != 1:
+      await update.message.reply_text("ℹ️ Usá: /jornada <número>")
+      return
 
-      jornada = int(context.args[0])  # Obtener argumento enviado junto al comando.
-      
-      # Validar que la jornada esté dentro del dominio:
-      if jornada < 1 or jornada > 38:
-        await update.message.reply_text("❌ Las jornadas válidas son de la 1 a la 38.")
-        return
+    jornada = int(context.args[0])  # Obtener argumento enviado junto al comando.
+    
+    # Validar que la jornada esté dentro del dominio:
+    if jornada < 1 or jornada > 38:
+      await update.message.reply_text("ℹ️ Las jornadas válidas son de la 1 a la 38.")
+      return
 
-      # Obtener partidos de la jornada:
-      partidos = await self._api_service.obtener_partidos_jornada(jornada)
-      if not partidos:
-        await update.message.reply_text("❌ No hay partidos para esta jornada.")
-        return
+    # Obtener partidos de la jornada:
+    partidos = await ejecutar_con_manejo(
+      update,
+      lambda: self._api_service.obtener_partidos_jornada(jornada),
+      mensaje_not_found="ℹ️ No se pudo obtener los partidos de la jornada."
+    )
+    
+    if not partidos:
+      return
 
-      # Carga de variables de utilidad:
-      scope = "jornada"
-      index = 0
+    # Carga de variables de utilidad:
+    scope = "jornada"
+    index = 0
 
-      context.user_data["jornada_partidos"] = partidos
-      context.user_data["jornada_index"] = index
-      context.user_data["jornada_numero"] = jornada
-      context.user_data["scope_actual"] = scope
+    context.user_data["jornada_partidos"] = partidos
+    context.user_data["jornada_index"] = index
+    context.user_data["jornada_numero"] = jornada
+    context.user_data["scope_actual"] = scope
 
-      texto = formatear_partido(partidos[index])
+    texto = formatear_partido(partidos[index])
 
-      # Construcción del teclado:
-      reply_markup = teclado_partido(
-        scope=scope,  # Para qué comando es el teclado.
-        index=index,  # Partido a mostrar.
-        total=len(partidos),  # Cantidad de partidos.
-        mostrar_previa=(partidos[index]["estado"] == "pre-match"),  # Solo si es un partido programado ofrece la posibilidad de consultar la previa.
-        id_partido=partidos[index].get("id"),  # Id del partido.
-        mostrar_historial=True,
-        id_partido_football_data=partidos[index].get("id_partido_football_data")  # Id del partido en FootballData.
-      )
+    # Construcción del teclado:
+    reply_markup = teclado_partido(
+      scope=scope,  # Para qué comando es el teclado.
+      index=index,  # Partido a mostrar.
+      total=len(partidos),  # Cantidad de partidos.
+      mostrar_previa=(partidos[index]["estado"] == "pre-match"),  # Solo si es un partido programado ofrece la posibilidad de consultar la previa.
+      id_partido=partidos[index].get("id"),  # Id del partido.
+      mostrar_historial=True,
+      id_partido_football_data=partidos[index].get("id_partido_football_data")  # Id del partido en FootballData.
+    )
 
-      sent = await update.message.reply_html(texto, reply_markup=reply_markup)
-      context.user_data[f"{scope}_message_id"] = sent.message_id
-
-    except Exception as e:
-      await update.message.reply_text(f"❌ Error obteniendo la jornada: {e}")
+    sent = await update.message.reply_html(texto, reply_markup=reply_markup)
+    context.user_data[f"{scope}_message_id"] = sent.message_id
 
   async def previa_partido_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -378,8 +422,15 @@ class CommandHandlerBot:
 
     # En caso de que no esté en cache, la solicita a la API:
     if not previa:
-      previa = await self._api_service.obtener_previa_partido(id_partido)
+      previa = await ejecutar_con_manejo(
+        update,
+        lambda: self._api_service.obtener_previa_partido(id_partido),
+        mensaje_not_found="ℹ️ No se pudo obtener la previa del partido."
+      )
       context.user_data[cache_key] = previa  # Guarda en cache la previa para reducir solicitudes.
+
+    if not previa:
+      return
 
     texto_previa = formatear_previa_partido(previa)
     texto = f"{query.message.text}\n\n{texto_previa}"
@@ -428,8 +479,15 @@ class CommandHandlerBot:
 
     # En caso de que no esté en cache, lo solicita a la API:
     if not historial:
-      historial = await self._api_service.obtener_historial_enfrentamientos(id_partido)
+      historial = await ejecutar_con_manejo(
+        update,
+        lambda: self._api_service.obtener_historial_enfrentamientos(id_partido),
+        mensaje_not_found="ℹ️ No se pudo obtener el historial."
+      )
       context.user_data[cache_key] = historial  # Guarda en cache el historial para reducir solicitudes.
+
+    if not historial:
+      return
 
     texto_historial = formatear_partidos_historial(historial)
     texto = f"{query.message.text}\n\n{texto_historial}"

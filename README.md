@@ -21,10 +21,13 @@ futbot/
 │
 ├── services/
 │   ├── groq_service.py         # Capa de comunicación con Groq
-│   └── api_service.py          # Capa de comunicación con APIs externas (Football-Data + SoccerData)
+│   ├── api_service.py          # Capa de comunicación con APIs externas (Football-Data + SoccerData)
+│   ├── exceptions.py           # Definición de tipos de excepciones
+│   └── http_utils.py           # Procesamiento de las respuestas de las APIs
 │
 └── utils/
     ├── teams.py                # Estandarización de información sobre los equipos
+    ├── handler_utils.py        # Centralización del manejo de excepciones
     └── formatters.py           # Funciones reutilizables para formatear mensajes
 ```
 
