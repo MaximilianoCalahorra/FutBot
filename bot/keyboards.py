@@ -110,3 +110,22 @@ def teclado_plantel(index, total, id_equipo):
     )
   
   return InlineKeyboardMarkup([botonera])
+
+def teclado_menu():
+  return InlineKeyboardMarkup([
+    [
+      InlineKeyboardButton("📊 Tabla", callback_data="menu_tabla"),
+      InlineKeyboardButton("🥅 Goleadores", callback_data="menu_goleadores")
+    ],
+    [
+      InlineKeyboardButton("📅 Hoy", callback_data="menu_hoy"),
+      InlineKeyboardButton("📅 Mañana", callback_data="menu_maniana")
+    ],
+    [
+      InlineKeyboardButton("🛡️ Equipos", callback_data="menu_equipos"),
+      InlineKeyboardButton("🗓️ Jornada", callback_data="menu_jornada")
+    ],
+    [
+      InlineKeyboardButton("ℹ️ Ayuda", callback_data="menu_ayuda")
+    ]
+  ])
