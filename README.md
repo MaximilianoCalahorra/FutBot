@@ -42,14 +42,16 @@ futbot/
 | `/hoy`              | Muestra los partidos del día en La Liga.                                |
 | `/tabla`            | Muestra la tabla de posiciones actualizada.                             |
 | `/goleadores`       | Muestra el top 10 de máximos goleadores del campeonato.                 |
-| `/equipos`           | Permite explorar información detallada de un equipo mediante botoneras. |
+| `/equipos`          | Permite explorar información detallada de un equipo mediante botoneras. |
 | `/jornada <número>` | Muestra los partidos de la jornada solicitada.                          |
+
+A su vez, **todas estas funcionalidades también son accesibles a través del menú principal del bot**, ofrecido por el mismo cuando el usuario ejecuta el comando `/start`.
 
 ---
 
 ### 👋 Comando `/start`
 
-El comando `/start` da la bienvenida al usuario e introduce las funcionalidades principales del bot.
+El comando `/start` da la bienvenida al usuario y permite el uso de las funcionalidades principales del bot mediante una botonera.
 
 🔹 **Flujo de uso**
 
@@ -59,11 +61,9 @@ El comando `/start` da la bienvenida al usuario e introduce las funcionalidades 
 
     - Un mensaje de bienvenida.
 
-    - Una breve explicación de qué información puede brindar.
+    - Una invitación a usar alguna de las funcionalidades del bot.
 
-    - Una invitación a usar `/ayuda` para ver el listado completo de comandos.
-
-Este comando está pensado como **punto de entrada** para nuevos usuarios.
+Este comando está pensado como **punto de entrada** para nuevos usuarios, pero también como un menú principal.
 
 ---
 

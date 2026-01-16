@@ -1,4 +1,4 @@
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters
 from config.config import Config
 from bot.command_handler import CommandHandlerBot
 from services.api_service import ApiService
@@ -38,6 +38,7 @@ class FutBot:
     """
     Registra todos los manejadores de comandos.
     """
+    # Comandos:
     self._application.add_handler(CommandHandler("start", self._command_handler.start))
     self._application.add_handler(CommandHandler("ayuda", self._command_handler.ayuda))
     self._application.add_handler(CommandHandler("hoy", self._command_handler.hoy))
@@ -46,14 +47,31 @@ class FutBot:
     self._application.add_handler(CommandHandler("goleadores", self._command_handler.goleadores))
     self._application.add_handler(CommandHandler("equipos", self._command_handler.equipos))
     self._application.add_handler(CommandHandler("jornada", self._command_handler.jornada))
+    
+    # Menú principal:
+    self._application.add_handler(CallbackQueryHandler(self._command_handler.menu_callback, pattern="^menu_"))
+    
+    # Partidos del día:
+    self._application.add_handler(CallbackQueryHandler(self._command_handler.hoy_callback, pattern="^hoy_partidos_"))
+    
+    # Equipo:
     self._application.add_handler(CallbackQueryHandler(self._command_handler.equipo_callback, pattern="^equipo_seleccionar_"))
     self._application.add_handler(CallbackQueryHandler(self._command_handler.equipo_plantel_callback, pattern="^equipo_plantel_"))
     self._application.add_handler(CallbackQueryHandler(self._command_handler.equipo_entrenador_callback, pattern="^equipo_entrenador_"))
     self._application.add_handler(CallbackQueryHandler(self._command_handler.equipo_racha_callback, pattern="^equipo_racha_"))
     self._application.add_handler(CallbackQueryHandler(self._command_handler.equipo_proximos_partidos_callback, pattern="^equipo_proximos_partidos_"))
-    self._application.add_handler(CallbackQueryHandler(self._command_handler.hoy_callback, pattern="^hoy_partidos_"))
+    
+    # Navegación entre partidos:
     self._application.add_handler(CallbackQueryHandler(self._command_handler.navegar_partido_callback, pattern="^nav_"))
+    
+    # Jornada:
+    self._application.add_handler(CallbackQueryHandler(self._command_handler.jornada_pedir_callback, pattern="^jornada_pedir$"))
+    self._application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self._command_handler.jornada_desde_mensaje))
+    
+    # Previa:
     self._application.add_handler(CallbackQueryHandler(self._command_handler.previa_partido_callback, pattern="^previa_"))
+    
+    # Historial:
     self._application.add_handler(CallbackQueryHandler(self._command_handler.historial_callback, pattern="^historial_"))
   
   def run(self):
