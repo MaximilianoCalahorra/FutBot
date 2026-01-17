@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from datetime import date, timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha, formatear_proximos_partidos, formatear_previa_partido, formatear_partidos_historial
 from utils.handler_utils import ejecutar_con_manejo
 from bot.keyboards import teclado_partido, teclado_partidos_hoy, teclado_equipos, teclado_equipo, teclado_plantel, teclado_menu
@@ -146,7 +147,7 @@ class CommandHandlerBot:
 
     _, _, estado, _ = query.data.split("_")  # Obtener estado de los partidos solicitados.
 
-    hoy = date.today().strftime("%d-%m-%Y")  # Fecha de hoy.
+    hoy = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date().strftime("%d-%m-%Y")  # Fecha de hoy.
     
     partidos = await ejecutar_con_manejo(
       update,
@@ -233,7 +234,7 @@ class CommandHandlerBot:
       await update.message.reply_text("⏳ Cargando partidos de mañana...")
     
     estado = "pre-match"
-    maniana = (date.today() + timedelta(days=1)).strftime("%d-%m-%Y")  # Fecha de mañana.
+    maniana = (datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date() + timedelta(days=1)).strftime("%d-%m-%Y")  # Fecha de mañana.
     
     partidos = await ejecutar_con_manejo(
       update,
