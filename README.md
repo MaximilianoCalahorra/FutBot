@@ -485,6 +485,7 @@ python-dotenv==1.0.1
 pycountry==24.6.1
 groq==0.9.0
 httpx>=0.28
+tzdata
 ```
 
 | Paquete               | Uso                                                                  |
@@ -495,6 +496,7 @@ httpx>=0.28
 | `pycountry`           | Resolución de países y códigos ISO para banderas                     |
 | `groq`                | Cliente para consumir modelos de lenguaje (LLMs) vía la API de Groq. |
 | `httpx`               | Cliente HTTP asíncrono para realizar requests a APIs externas.       |
+| `tzdata`              | Base de datos de zonas horarias.                                     |
 
 ---
 
