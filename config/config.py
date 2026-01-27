@@ -29,8 +29,9 @@ class Config:
       raise ValueError("No se encontró la API key de Groq. Verificá el archivo .env")
     
     # Variables adicionales de configuración:
-    self._id_liga_football_data = "PD"  # La Liga.
-    self._id_liga_soccerdata = 297  # La Liga.
+    # self._id_liga_football_data = "PD"  # La Liga.
+    # self._id_liga_soccerdata = 297  # La Liga.
+    
     self._football_data_org_api_base_url = "https://api.football-data.org/v4/"
     self._soccerdata_api_base_url = "https://api.soccerdataapi.com/"
   
@@ -43,9 +44,9 @@ class Config:
   def football_data_org_api_key(self):
     return self._football_data_org_api_key
   
-  @property
-  def id_liga_football_data(self):
-    return self._id_liga_football_data
+  # @property
+  # def id_liga_football_data(self):
+  #   return self._id_liga_football_data
   
   @property
   def football_data_org_api_base_url(self):
@@ -56,12 +57,12 @@ class Config:
     return self._soccerdata_api_key
   
   @property
-  def id_liga_soccerdata(self):
-    return self._id_liga_soccerdata
-  
-  @property
   def soccerdata_api_base_url(self):
     return self._soccerdata_api_base_url
+  
+  @property
+  def ligas(self):
+    return self._ligas
   
   @property
   def groq_api_key(self):

@@ -2,9 +2,9 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha, formatear_proximos_partidos, formatear_previa_partido, formatear_partidos_historial
+from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha, formatear_proximos_partidos, formatear_previa_partido, formatear_partidos_historial, datos_liga
 from utils.handler_utils import ejecutar_con_manejo
-from bot.keyboards import teclado_partido, teclado_partidos_hoy, teclado_equipos, teclado_equipo, teclado_plantel, teclado_menu
+from bot.keyboards import teclado_partido, teclado_partidos_hoy, teclado_equipos, teclado_equipo, teclado_plantel, teclado_menu_liga, teclado_ligas
 
 class CommandHandlerBot:
   """
@@ -30,7 +30,7 @@ class CommandHandlerBot:
     
     await update.message.reply_html(
       texto,
-      reply_markup=teclado_menu()
+      reply_markup=teclado_ligas("menu_")
     )
     
   async def _responder(self, update: Update, context: ContextTypes.DEFAULT_TYPE, texto: str, reply_markup=None, editar=False):
@@ -82,8 +82,30 @@ class CommandHandlerBot:
     )
     
     await self._responder(update, context, texto)
-    
+  
   async def menu_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer("⏳ Cargando menú de la liga...")
+    _, id_liga_football_data, id_liga_soccerdata = query.data.split("_")  # Obtener id de la liga seleccionada en las APIs.
+    
+    nombre_liga, bandera, reglas_posiciones = datos_liga(id_liga_football_data)
+    
+    context.user_data["liga"] = {
+      "fd": id_liga_football_data,
+      "sd": id_liga_soccerdata,
+      "nombre": nombre_liga,
+      "bandera": bandera,
+      "reglas_posiciones": reglas_posiciones 
+    }
+    
+    texto = f"¿Qué querés consultar?"
+    
+    await query.message.reply_html(
+      texto,
+      reply_markup=teclado_menu_liga()
+    )
+  
+  async def liga_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Redirige el flujo a la funcionalidad que solicitó el usuario mediante el menú.
     """
@@ -91,13 +113,13 @@ class CommandHandlerBot:
     accion = query.data
     
     mensajes = {
-      "menu_tabla": "⏳ Cargando tabla de posiciones...",
-      "menu_hoy": "⏳ Cargando partidos de hoy...",
-      "menu_maniana": "⏳ Cargando partidos de mañana...",
-      "menu_goleadores": "⏳ Cargando goleadores...",
-      "menu_equipos": "⏳ Cargando equipos...",
-      "menu_jornada": "⏳ Cargando jornada...",
-      "menu_ayuda": "ℹ️ Mostrando ayuda...",
+      "liga_tabla": "⏳ Cargando tabla de posiciones...",
+      "liga_hoy": "⏳ Cargando partidos de hoy...",
+      "liga_maniana": "⏳ Cargando partidos de mañana...",
+      "liga_goleadores": "⏳ Cargando goleadores...",
+      "liga_equipos": "⏳ Cargando equipos...",
+      "liga_jornada": "⏳ Cargando jornada...",
+      "liga_ayuda": "ℹ️ Mostrando ayuda...",
     }
 
     await query.answer(
@@ -105,26 +127,86 @@ class CommandHandlerBot:
       cache_time=0
     )
     
-    if accion == "menu_tabla":
+    if accion == "liga_tabla":
       await self.tabla(update, context)
     
-    elif accion == "menu_hoy":
+    elif accion == "liga_hoy":
       await self.hoy(update, context)
       
-    elif accion == "menu_maniana":
+    elif accion == "liga_maniana":
       await self.maniana(update, context)
     
-    elif accion == "menu_goleadores":
+    elif accion == "liga_goleadores":
       await self.goleadores(update, context)
       
-    elif accion == "menu_equipos":
+    elif accion == "liga_equipos":
       await self.equipos(update, context)
     
-    elif accion == "menu_jornada":
+    elif accion == "liga_jornada":
       await self.jornada_pedir_callback(update, context)
     
-    elif accion == "menu_ayuda":
+    elif accion == "liga_ayuda":
       await self.ayuda(update, context)
+   
+  async def ligas(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Responde al comando /ligas.
+    """ 
+    texto = (
+      "⚽ Elegí una de las siguientes ligas:"
+    )
+    
+    await update.message.reply_html(
+      texto,
+      reply_markup=teclado_ligas("ligas_")
+    )
+    
+  async def ligas_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer("✅ Liga seleccionada")
+    _, id_liga_football_data, id_liga_soccerdata = query.data.split("_")  # Obtener id de la liga seleccionada en las APIs.
+    
+    nombre_liga, bandera, reglas_posiciones = datos_liga(id_liga_football_data)
+    
+    context.user_data["liga"] = {
+      "fd": id_liga_football_data,
+      "sd": id_liga_soccerdata,
+      "nombre": nombre_liga,
+      "bandera": bandera,
+      "reglas_posiciones": reglas_posiciones 
+    }
+    
+    texto_base = f"✅ <b>Liga seleccionada:</b> {nombre_liga} {bandera}\n\n"
+    
+    if "comando_pendiente" in context.user_data:
+      comando = context.user_data.pop("comando_pendiente")
+      texto = (
+        f"{texto_base}"
+        f"👉 Ahora podés volver a usar /{comando}\n\n"
+        "📌 Cambiar liga → /ligas"
+      )
+    else:
+      texto = (
+        f"{texto_base}"
+        "A partir de ahora, las consultas se aplicarán a esta competencia.\n\n"
+        "📌 Cambiar liga → /ligas"
+      )
+
+    await query.message.edit_text(texto, parse_mode="HTML")
+
+  def _liga_seleccionada(self, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    return "liga" in context.user_data
+  
+  async def _pedir_liga(self, update: Update):
+    texto = (
+      "⚠️ Primero necesitás seleccionar una liga.\n\n"
+      "Elegí una a continuación 👇"
+    )
+    
+    await update.message.reply_html(
+      texto,
+      reply_markup=teclado_ligas("ligas_")
+    )
       
   async def hoy(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -132,6 +214,11 @@ class CommandHandlerBot:
     """
     if update.message:
       await update.message.reply_text("⏳ Cargando partidos de hoy...")
+      
+    if not self._liga_seleccionada(context):
+      context.user_data["comando_pendiente"] = "hoy"
+      await self._pedir_liga(update)
+      return
     
     # Armado de la botonera:
     textos = ["🕒 Programados", "⏳ En juego", "🏁 Finalizados", "📅 ➡️ ⚽ Pospuestos"]
@@ -146,12 +233,14 @@ class CommandHandlerBot:
     await query.answer("⏳ Cargando partidos...")
 
     _, _, estado, _ = query.data.split("_")  # Obtener estado de los partidos solicitados.
+    
+    id_liga_sd = context.user_data["liga"]["sd"]
 
     hoy = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date().strftime("%d-%m-%Y")  # Fecha de hoy.
     
     partidos = await ejecutar_con_manejo(
       update,
-      lambda: self._api_service.obtener_partidos_estado_y_fecha(estado, hoy),
+      lambda: self._api_service.obtener_partidos_estado_y_fecha(estado, hoy, id_liga_sd),
       mensaje_not_found="ℹ️ No hay partidos para mostrar."
     )
     
@@ -233,12 +322,18 @@ class CommandHandlerBot:
     if update.message:
       await update.message.reply_text("⏳ Cargando partidos de mañana...")
     
+    if not self._liga_seleccionada(context):
+      context.user_data["comando_pendiente"] = "maniana"
+      await self._pedir_liga(update)
+      return
+    
+    id_liga_sd = context.user_data["liga"]["sd"]
     estado = "pre-match"
     maniana = (datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date() + timedelta(days=1)).strftime("%d-%m-%Y")  # Fecha de mañana.
     
     partidos = await ejecutar_con_manejo(
       update,
-      lambda: self._api_service.obtener_partidos_estado_y_fecha(estado, maniana),
+      lambda: self._api_service.obtener_partidos_estado_y_fecha(estado, maniana, id_liga_sd),
       mensaje_not_found="ℹ️ No hay partidos para mostrar."
     )
     
@@ -282,16 +377,26 @@ class CommandHandlerBot:
     if update.message:
       await update.message.reply_text("⏳ Cargando tabla de posiciones...")
     
+    if not self._liga_seleccionada(context):
+      context.user_data["comando_pendiente"] = "tabla"
+      await self._pedir_liga(update)
+      return
+    
+    id_liga_fd = context.user_data["liga"]["fd"]
+    nombre_liga = context.user_data["liga"]["nombre"]
+    bandera = context.user_data["liga"]["bandera"]
+    reglas_posiciones = context.user_data["liga"]["reglas_posiciones"]
+      
     clasificacion = await ejecutar_con_manejo(
       update,
-      lambda: self._api_service.obtener_clasificacion(),
+      lambda: self._api_service.obtener_clasificacion(id_liga_fd),
       mensaje_not_found="ℹ️ No se pudo obtener la tabla de posiciones."
     )
     
     if not clasificacion:
       return
     
-    texto = formatear_clasificacion_tabla(clasificacion)
+    texto = formatear_clasificacion_tabla(clasificacion, nombre_liga, bandera, reglas_posiciones)
     await self._responder(update, context, texto)
     
   async def goleadores(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -300,17 +405,26 @@ class CommandHandlerBot:
     """
     if update.message:
       await update.message.reply_text("⏳ Cargando goleadores...")
+      
+    if not self._liga_seleccionada(context):
+      context.user_data["comando_pendiente"] = "goleadores"
+      await self._pedir_liga(update)
+      return
+    
+    id_liga_fd = context.user_data["liga"]["fd"]
+    nombre_liga = context.user_data["liga"]["nombre"]
+    bandera = context.user_data["liga"]["bandera"]
     
     goleadores = await ejecutar_con_manejo(
       update,
-      lambda: self._api_service.obtener_goleadores(),
+      lambda: self._api_service.obtener_goleadores(id_liga_fd),
       mensaje_not_found="ℹ️ No se pudo obtener el ranking de goleadores."
     )
     
     if not goleadores:
       return
     
-    texto = formatear_goleadores(goleadores)
+    texto = formatear_goleadores(goleadores, nombre_liga, bandera)
     await self._responder(update, context, texto)
   
   async def equipos(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -320,10 +434,17 @@ class CommandHandlerBot:
     if update.message:
       await update.message.reply_text("⏳ Cargando equipos...")
     
+    if not self._liga_seleccionada(context):
+      context.user_data["comando_pendiente"] = "equipos"
+      await self._pedir_liga(update)
+      return
+    
+    id_liga_fd = context.user_data["liga"]["fd"]
+    
     # Listado de equipos:
     equipos = await ejecutar_con_manejo(
       update,
-      lambda: self._api_service.obtener_equipos(),
+      lambda: self._api_service.obtener_equipos(id_liga_fd),
       mensaje_not_found="ℹ️ No se pudo obtener los equipos."
     )
     
@@ -429,9 +550,11 @@ class CommandHandlerBot:
     
     id_equipo = query.data.replace("equipo_racha_", "")
     
+    id_liga_fd = context.user_data["liga"]["fd"]
+    
     racha = await ejecutar_con_manejo(
       update,
-      lambda: self._api_service.obtener_racha(id_equipo),
+      lambda: self._api_service.obtener_racha(id_equipo, id_liga_fd),
       mensaje_not_found="ℹ️ No se pudo obtener la racha."
     )
     
@@ -447,9 +570,11 @@ class CommandHandlerBot:
     
     id_equipo = query.data.replace("equipo_proximos_partidos_", "")
     
+    id_liga_fd = context.user_data["liga"]["fd"]
+    
     proximos_partidos = await ejecutar_con_manejo(
       update,
-      lambda: self._api_service.obtener_proximos_partidos(id_equipo),
+      lambda: self._api_service.obtener_proximos_partidos(id_equipo, id_liga_fd),
       mensaje_not_found="ℹ️ No se pudo obtener los próximos partidos."
     )
     
@@ -493,9 +618,12 @@ class CommandHandlerBot:
     await self._mostrar_jornada(update, context, jornada)
   
   async def _mostrar_jornada(self, update, context, jornada: int):
+    id_liga_fd = context.user_data["liga"]["fd"]
+    id_liga_sd = context.user_data["liga"]["sd"]
+    
     partidos = await ejecutar_con_manejo(
       update,
-      lambda: self._api_service.obtener_partidos_jornada(jornada),
+      lambda: self._api_service.obtener_partidos_jornada(jornada, id_liga_fd, id_liga_sd),
       mensaje_not_found="ℹ️ No se pudo obtener los partidos de la jornada."
     )
     
@@ -547,6 +675,11 @@ class CommandHandlerBot:
 
     if jornada < 1 or jornada > 38:
       await update.message.reply_text("ℹ️ Las jornadas válidas son de la 1 a la 38.")
+      return
+  
+    if not self._liga_seleccionada(context):
+      context.user_data["comando_pendiente"] = f"jornada {jornada}"
+      await self._pedir_liga(update)
       return
     
     if update.message:
@@ -622,12 +755,14 @@ class CommandHandlerBot:
     # Obtener historial de enfrentamientos:
     cache_key = f"historial_{id_partido}"
     historial = context.user_data.get(cache_key)
+    
+    id_liga_fd = context.user_data.get("liga_fd", "PD")
 
     # En caso de que no esté en cache, lo solicita a la API:
     if not historial:
       historial = await ejecutar_con_manejo(
         update,
-        lambda: self._api_service.obtener_historial_enfrentamientos(id_partido),
+        lambda: self._api_service.obtener_historial_enfrentamientos(id_partido, id_liga_fd),
         mensaje_not_found="ℹ️ No se pudo obtener el historial."
       )
       context.user_data[cache_key] = historial  # Guarda en cache el historial para reducir solicitudes.
