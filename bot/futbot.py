@@ -47,9 +47,16 @@ class FutBot:
     self._application.add_handler(CommandHandler("goleadores", self._command_handler.goleadores))
     self._application.add_handler(CommandHandler("equipos", self._command_handler.equipos))
     self._application.add_handler(CommandHandler("jornada", self._command_handler.jornada))
+    self._application.add_handler(CommandHandler("ligas", self._command_handler.ligas))
     
     # Menú principal:
     self._application.add_handler(CallbackQueryHandler(self._command_handler.menu_callback, pattern="^menu_"))
+    
+    # Menú de liga:
+    self._application.add_handler(CallbackQueryHandler(self._command_handler.liga_callback, pattern="^liga_"))
+    
+    # Ligas:
+    self._application.add_handler(CallbackQueryHandler(self._command_handler.ligas_callback, pattern="^ligas_"))
     
     # Partidos del día:
     self._application.add_handler(CallbackQueryHandler(self._command_handler.hoy_callback, pattern="^hoy_partidos_"))
