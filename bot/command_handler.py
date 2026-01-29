@@ -116,6 +116,7 @@ class CommandHandlerBot:
       "liga_tabla": "⏳ Cargando tabla de posiciones...",
       "liga_hoy": "⏳ Cargando partidos de hoy...",
       "liga_maniana": "⏳ Cargando partidos de mañana...",
+      "liga_ayer": "⏳ Cargando partidos de ayer...",
       "liga_goleadores": "⏳ Cargando goleadores...",
       "liga_equipos": "⏳ Cargando equipos...",
       "liga_jornada": "⏳ Cargando jornada...",
@@ -135,6 +136,9 @@ class CommandHandlerBot:
       
     elif accion == "liga_maniana":
       await self.maniana(update, context)
+      
+    elif accion == "liga_ayer":
+      await self.ayer(update, context)
     
     elif accion == "liga_goleadores":
       await self.goleadores(update, context)
@@ -338,7 +342,12 @@ class CommandHandlerBot:
     )
     
     if not partidos:
-      await update.message.reply_text("ℹ️ No hay partidos para mostrar.")
+      texto = "ℹ️ No hay partidos para mostrar."
+      await self._responder(
+        update,
+        context,
+        texto
+      )
       return
 
     # Carga de variables de utilidad:
@@ -358,6 +367,66 @@ class CommandHandlerBot:
       index=index,  # Partido a mostrar.
       total=len(partidos),  # Cantidad de partidos.
       mostrar_previa=(partidos[index]["estado"] == "pre-match"),  # Solo si es un partido programado ofrece la posibilidad de consultar la previa.
+      id_partido=partidos[index].get("id")  # Id del partido a mostrar.
+    )
+    
+    message_id = await self._responder(
+      update,
+      context,
+      texto,
+      reply_markup=reply_markup
+    )
+
+    context.user_data[f"{scope}_message_id"] = message_id
+    
+  async def ayer(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Responde al comando /ayer o al botón que lo llama.
+    """
+    if update.message:
+      await update.message.reply_text("⏳ Cargando partidos de ayer...")
+    
+    if not self._liga_seleccionada(context):
+      context.user_data["comando_pendiente"] = "ayer"
+      await self._pedir_liga(update)
+      return
+    
+    id_liga_sd = context.user_data["liga"]["sd"]
+    estado = "finished"
+    ayer = (datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date() - timedelta(days=1)).strftime("%d-%m-%Y")  # Fecha de ayer.
+    
+    partidos = await ejecutar_con_manejo(
+      update,
+      lambda: self._api_service.obtener_partidos_estado_y_fecha(estado, ayer, id_liga_sd),
+      mensaje_not_found="ℹ️ No hay partidos para mostrar."
+    )
+    
+    if not partidos:
+      texto = "ℹ️ No hay partidos para mostrar."
+      await self._responder(
+        update,
+        context,
+        texto
+      )
+      return
+
+    # Carga de variables de utilidad:
+    scope = "ayer"
+    index = 0
+
+    context.user_data["ayer_estado"] = estado
+    context.user_data["ayer_partidos"] = partidos
+    context.user_data["ayer_index"] = index
+    context.user_data["scope_actual"] = scope
+
+    texto = formatear_partido(partidos[index])
+
+    # Construcción del teclado:
+    reply_markup = teclado_partido(
+      scope=scope,  # Para qué comando es el teclado.
+      index=index,  # Partido a mostrar.
+      total=len(partidos),  # Cantidad de partidos.
+      mostrar_previa=False,  # No se muestra la previa porque son partidos finalizados.
       id_partido=partidos[index].get("id")  # Id del partido a mostrar.
     )
     

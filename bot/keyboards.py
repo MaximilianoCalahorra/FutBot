@@ -152,10 +152,11 @@ def teclado_menu_liga():
       InlineKeyboardButton("📅 Mañana", callback_data="liga_maniana")
     ],
     [
-      InlineKeyboardButton("🛡️ Equipos", callback_data="liga_equipos"),
+      InlineKeyboardButton("📅 Ayer", callback_data="liga_ayer"),
       InlineKeyboardButton("🗓️ Jornada", callback_data="liga_jornada")
     ],
     [
+      InlineKeyboardButton("🛡️ Equipos", callback_data="liga_equipos"),
       InlineKeyboardButton("ℹ️ Ayuda", callback_data="liga_ayuda")
     ]
   ])
