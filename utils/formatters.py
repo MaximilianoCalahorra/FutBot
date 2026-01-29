@@ -1,35 +1,75 @@
 from datetime import datetime, timedelta
 import pycountry
+from utils.ligas import LIGAS, DESCRIPCIONES
 
-def emoji_pos(pos):
-  if pos <= 4:
-      return "🟦"
-  if pos == 5:
-      return "🟧"
-  if pos == 6:
-      return "🟩"
-  if pos >= 18:
-      return "🟥"
+def datos_liga(id_liga):
+  datos_liga = None
+  
+  for liga in LIGAS.values():
+    if liga["football_data"] == id_liga or liga["soccerdata"] == id_liga:
+      datos_liga = (liga["nombre"], liga["bandera"], liga["reglas_posiciones"])
+      break
+  
+  return datos_liga
+
+EMOJIS = {
+  "champions": "🟦",
+  "champions_q": "🔷",
+  "europa": "🟧",
+  "conference": "🟩",
+  "conference_q": "🟢",
+  "ascenso": "⬆️",
+  "playoff_ascenso": "🔼",
+  "repechaje_descenso": "🟨",
+  "descenso": "🟥",
+}
+
+def emoji_pos(pos, reglas):
+  if not reglas:
+    return "    "
+  
+  for resultado, posiciones in reglas.items():
+    if pos in posiciones:
+      return EMOJIS.get(resultado, "    ")
+  
   return "    "
 
-def formatear_clasificacion_tabla(clasificacion):
-  texto = "📊 <b>Tabla de Posiciones – La Liga</b>\n\n"
+ORDEN_LEYENDA = [
+  "ascenso",
+  "playoff_ascenso",
+  "champions",
+  "champions_q",
+  "europa",
+  "conference",
+  "conference_q",
+  "repechaje_descenso",
+  "descenso",
+]
+
+def generar_leyenda(reglas_posiciones):
+  lineas = []
+
+  for resultado in ORDEN_LEYENDA:
+    if resultado in reglas_posiciones:
+      emoji = EMOJIS.get(resultado, "")
+      texto = DESCRIPCIONES.get(resultado, resultado)
+      lineas.append(f"{emoji} {texto}")
+
+  return "\n".join(lineas) + "\n\n"
+
+def formatear_clasificacion_tabla(clasificacion, nombre_liga, bandera, reglas_posiciones):
+  texto = f"📊 <b>Tabla de Posiciones – {nombre_liga}</b> {bandera}\n\n"
   
   for equipo in clasificacion:
     pos = equipo["posicion"]
     texto += (
-      f"{emoji_pos(pos)} <b>{pos}. {equipo['nombre']}</b>\n"
+      f"{emoji_pos(pos, reglas_posiciones)} <b>{pos}. {equipo['nombre']}</b>\n"
       f"     ⭐ Pts: {equipo['puntos']}\n"
       f"     🏟️ PJ: {equipo['partidos_jugados']} | G: {equipo['ganados']} E: {equipo['empatados']} P: {equipo['perdidos']}\n"
       f"     ⚽ DG: {equipo['diferencia_gol']} | GF: {equipo['goles_favor']} GC: {equipo['goles_contra']}\n\n"
     )
   
-  texto += (
-    f"🟦 Champions League\n"
-    f"🟧 Europa League\n"
-    f"🟩 Conference League\n"
-    f"🟥 Descenso\n\n"
-  )
+  texto += generar_leyenda(reglas_posiciones)
   
   return texto
 
@@ -144,41 +184,50 @@ def formatear_eventos(eventos, local, visitante):
 
 def formatear_clima(descripcion: str, temp_c: float | None = None) -> str:
   desc = descripcion.lower().strip()
-  
-  if "thunder" in desc or "storm" in desc:
+
+  if any(k in desc for k in ("thunder", "storm", "thundery")):
     texto, emoji = "Tormenta", "⛈️"
 
-  elif "snow" in desc:
-    texto, emoji = "Nieve", "❄️"
+  elif any(k in desc for k in ("snow", "sleet", "ice", "freezing")):
+    texto, emoji = "Nieve / hielo", "❄️"
 
-  elif "heavy rain" in desc:
+  elif any(k in desc for k in ("heavy rain", "torrential", "downpour")):
     texto, emoji = "Lluvia fuerte", "🌧️"
 
-  elif "light rain" in desc or "rain shower" in desc or "shower" in desc:
+  elif any(k in desc for k in (
+    "light rain", "drizzle", "shower", "patchy rain",
+    "scattered showers", "intermittent rain"
+  )):
     texto, emoji = "Lluvia ligera", "🌦️"
 
   elif "rain" in desc:
     texto, emoji = "Lluvia", "🌧️"
 
-  elif "fog" in desc or "mist" in desc:
+  elif any(k in desc for k in ("fog", "mist", "haze", "smoke")):
     texto, emoji = "Neblina", "🌫️"
 
-  elif "overcast" in desc:
-    texto, emoji = "Cubierto", "☁️"
+  elif any(k in desc for k in ("overcast", "broken clouds", "mostly cloudy")):
+    texto, emoji = "Muy nublado", "☁️"
+
+  elif any(k in desc for k in ("partly cloudy", "few clouds")):
+    texto, emoji = "Parcialmente nublado", "🌥️"
 
   elif "cloud" in desc:
     texto, emoji = "Nublado", "☁️"
 
-  elif "sun" in desc or "clear" in desc:
+  elif any(k in desc for k in ("windy", "breezy", "gusty")):
+    texto, emoji = "Ventoso", "💨"
+
+  elif any(k in desc for k in ("sun", "clear", "fair")):
     texto, emoji = "Despejado", "☀️"
 
   else:
-    texto, emoji = "Clima variable", "🌡️"
+    texto, emoji = "Condiciones variables", "🌡️"
 
   if temp_c is not None:
     return f"{emoji} {texto} · {round(temp_c)}°C\n"
 
-  return f"{emoji} {texto} · {round(temp_c)}°C\n"
+  return f"{emoji} {texto}\n"
 
 def formatear_expectativa(valor):
   expectativa = "🔥 Expectativa:"
@@ -289,8 +338,8 @@ def formatear_partidos(partidos):
 
   return mensaje.strip()
 
-def formatear_goleadores(goleadores):
-  texto = "🎯 <b>Goleadores - La Liga</b>\n\n"
+def formatear_goleadores(goleadores, nombre_liga, bandera):
+  texto = f"🎯 <b>Goleadores - {nombre_liga}</b> {bandera}\n\n"
 
   i = 0
   for g in goleadores:

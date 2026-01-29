@@ -1,4 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from utils.ligas import LIGAS
 
 def teclado_partido(scope, index, total, mostrar_previa, id_partido, mostrar_historial=False, id_partido_football_data=None):
   botones = []
@@ -111,21 +112,50 @@ def teclado_plantel(index, total, id_equipo):
   
   return InlineKeyboardMarkup([botonera])
 
-def teclado_menu():
+def teclado_ligas(callback):
+  pl = LIGAS["premier_league"]
+  ll = LIGAS["la_liga"]
+  ch = LIGAS["championship"]
+  bu = LIGAS["bundesliga"]
+  sa = LIGAS["serie_a"]
+  l1 = LIGAS["ligue_1"]
+  er = LIGAS["eredivisie"]
+  prl = LIGAS["primeira_liga"]
+  
   return InlineKeyboardMarkup([
     [
-      InlineKeyboardButton("📊 Tabla", callback_data="menu_tabla"),
-      InlineKeyboardButton("🥅 Goleadores", callback_data="menu_goleadores")
+      InlineKeyboardButton(f"{pl['bandera']} {pl['nombre']}", callback_data=f"{callback}{pl['football_data']}_{pl['soccerdata']}"),
+      InlineKeyboardButton(f"{ch['bandera']} {ch['nombre']}", callback_data=f"{callback}{ch['football_data']}_{ch['soccerdata']}")
     ],
     [
-      InlineKeyboardButton("📅 Hoy", callback_data="menu_hoy"),
-      InlineKeyboardButton("📅 Mañana", callback_data="menu_maniana")
+      InlineKeyboardButton(f"{ll['bandera']} {ll['nombre']}", callback_data=f"{callback}{ll['football_data']}_{ll['soccerdata']}"),
+      InlineKeyboardButton(f"{bu['bandera']} {bu['nombre']}", callback_data=f"{callback}{bu['football_data']}_{bu['soccerdata']}")
     ],
     [
-      InlineKeyboardButton("🛡️ Equipos", callback_data="menu_equipos"),
-      InlineKeyboardButton("🗓️ Jornada", callback_data="menu_jornada")
+      InlineKeyboardButton(f"{sa['bandera']} {sa['nombre']}", callback_data=f"{callback}{sa['football_data']}_{sa['soccerdata']}"),
+      InlineKeyboardButton(f"{l1['bandera']} {l1['nombre']}", callback_data=f"{callback}{l1['football_data']}_{l1['soccerdata']}")
     ],
     [
-      InlineKeyboardButton("ℹ️ Ayuda", callback_data="menu_ayuda")
+      InlineKeyboardButton(f"{prl['bandera']} {prl['nombre']}", callback_data=f"{callback}{prl['football_data']}_{prl['soccerdata']}"),
+      InlineKeyboardButton(f"{er['bandera']} {er['nombre']}", callback_data=f"{callback}{er['football_data']}_{er['soccerdata']}")
+    ]
+  ])
+  
+def teclado_menu_liga():
+  return InlineKeyboardMarkup([
+    [
+      InlineKeyboardButton("📊 Tabla", callback_data="liga_tabla"),
+      InlineKeyboardButton("🥅 Goleadores", callback_data="liga_goleadores")
+    ],
+    [
+      InlineKeyboardButton("📅 Hoy", callback_data="liga_hoy"),
+      InlineKeyboardButton("📅 Mañana", callback_data="liga_maniana")
+    ],
+    [
+      InlineKeyboardButton("🛡️ Equipos", callback_data="liga_equipos"),
+      InlineKeyboardButton("🗓️ Jornada", callback_data="liga_jornada")
+    ],
+    [
+      InlineKeyboardButton("ℹ️ Ayuda", callback_data="liga_ayuda")
     ]
   ])

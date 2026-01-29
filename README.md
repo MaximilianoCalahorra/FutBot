@@ -1,7 +1,7 @@
-# ⚽ FutBot — La Liga (España)
+# ⚽ FutBot
 
-Asistente de Telegram que brinda información actualizada sobre La Liga de España 🇪🇸:
-partidos del día, tabla de posiciones, top 10 de goleadores e información sobre los equipos.
+Asistente de Telegram que brinda información actualizada sobre las ligas europeas más prestigiosas:
+partidos del día, del siguiente y de la jornada, tabla de posiciones, top 10 de goleadores, información sobre los equipos, previa de los partidos e historial de enfrentamientos entre dos equipos.
 
 ## 🏗️ Estructura actual del proyecto
 
@@ -27,6 +27,7 @@ futbot/
 │
 └── utils/
     ├── teams.py                # Estandarización de información sobre los equipos
+    ├── ligas.py                # Estandarización de información sobre las ligas
     ├── handler_utils.py        # Centralización del manejo de excepciones
     └── formatters.py           # Funciones reutilizables para formatear mensajes
 ```
@@ -44,6 +45,7 @@ futbot/
 | `/goleadores`       | Muestra el top 10 de máximos goleadores del campeonato.                 |
 | `/equipos`          | Permite explorar información detallada de un equipo mediante botoneras. |
 | `/jornada <número>` | Muestra los partidos de la jornada solicitada.                          |
+| `/ligas`            | Permite seleccionar la liga sobre la cual se hacen las consultas.       |
 
 A su vez, **todas estas funcionalidades también son accesibles a través del menú principal del bot**, ofrecido por el mismo cuando el usuario ejecuta el comando `/start`.
 
@@ -61,7 +63,7 @@ El comando `/start` da la bienvenida al usuario y permite el uso de las funciona
 
     - Un mensaje de bienvenida.
 
-    - Una invitación a usar alguna de las funcionalidades del bot.
+    - Una invitación a seleccionar alguna de las ligas y poder usar alguna de las funcionalidades del bot.
 
 Este comando está pensado como **punto de entrada** para nuevos usuarios, pero también como un menú principal.
 
@@ -87,7 +89,7 @@ Sirve como **guía rápida** para recordar las funcionalidades del bot.
 
 ### 📅 Comando `/hoy`
 
-El comando `/hoy` muestra los partidos de La Liga correspondientes al día actual.
+El comando `/hoy` muestra los partidos correspondientes al día actual de la liga seleccionada.
 
 🔹 **Flujo de uso**
 
@@ -135,7 +137,7 @@ El formato se adapta dinámicamente según el estado del partido.
 
 ### 📅 Comando `/maniana`
 
-El comando `/maniana` muestra los partidos de La Liga correspondientes al día siguiente.
+El comando `/maniana` muestra los partidos correspondientes al día siguiente de la liga seleccionada .
 
 🔹 **Flujo de uso**
 
@@ -154,7 +156,7 @@ El comando `/maniana` muestra los partidos de La Liga correspondientes al día s
 
 ### 🏆 Comando `/tabla`
 
-El comando `/tabla` muestra la tabla de posiciones actualizada de La Liga.
+El comando `/tabla` muestra la tabla de posiciones actualizada de la liga seleccionada.
 
 🔹 **Flujo de uso**
 
@@ -182,7 +184,7 @@ La información se presenta de forma compacta y fácil de leer dentro del chat.
 
 ### ⚽ Comando `/goleadores`
 
-El comando `/goleadores` muestra el ranking de los máximos goleadores del campeonato.
+El comando `/goleadores` muestra el ranking de los máximos goleadores de la liga seleccionada.
 
 🔹 **Flujo de uso**
 
@@ -206,7 +208,7 @@ Este comando permite tener una vista rápida del rendimiento ofensivo de la liga
 
 ### 🛡️ Comando `/equipos`
 
-El comando `/equipos` permite al usuario explorar información detallada de los clubes de La Liga
+El comando `/equipos` permite al usuario explorar información detallada de los clubes de la liga seleccionada
 de forma interactiva mediante **botoneras y navegación por callbacks**.
 
 #### 🔹 Flujo de uso
@@ -312,11 +314,11 @@ Muestra información sobre los próximos 5 encuentros que el equipo debe disputa
 
 ### 📅 Comando `/jornada <número>`
 
-El comando `/jornada <número>` muestra los partidos de La Liga correspondientes a la jornada solicitada.
+El comando `/jornada <número>` muestra los partidos correspondientes a la jornada solicitada de la liga seleccionada.
 
 🔹 **Flujo de uso**
 
-1. El usuario ejecuta el comando: `/jornada` e indica un número (es válido entre 1 y 38, extremos incluidos)
+1. El usuario ejecuta el comando: `/jornada` e indica un número.
 
 2. El bot obtiene los partidos de la jornada desde la API.
 
@@ -362,6 +364,18 @@ El formato se adapta dinámicamente según el estado del partido, y cada partido
 
 ---
 
+### 📅 Comando `/ligas`
+
+El comando `/ligas` permite al usuario indicar al bot sobre cuál de las ligas disponibles quiere obtener información.
+
+🔹 **Flujo de uso**
+
+1. El usuario ejecuta el comando: `/ligas` y selecciona una de las opciones presentadas.
+
+2. El bot registra esa elección y la utilizada en las siguientes consultas.
+
+---
+
 ## 🌐 APIs utilizadas
 
 El bot combina información obtenida desde dos APIs para cubrir todos los datos necesarios:
@@ -371,16 +385,19 @@ El bot combina información obtenida desde dos APIs para cubrir todos los datos 
 https://api.football-data.org/v4/
 
 Usada para:
+- Partidos del día, del día siguiente y de la jornada.
 - Tabla de posiciones.
 - Ranking de goleadores.
 - Información sobre los equipos.
+- Historial de enfrentamientos entre dos equipos.
 
 ### 2️⃣ SoccerData API
 
 https://api.soccerdataapi.com/
 
 Usada para:
-- Partidos del día con los eventos en caso de que sea un partido en juego o finalizado.
+- Eventos de los partidos en juego o finalizados.
+- Previa de los partidos.
 
 ---
 
