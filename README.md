@@ -557,4 +557,33 @@ cp .env.example .env
 
 # Ejecutar el bot
 python main.py
+
+# Acceder al chat en Telegram: https://t.me/FutBot_MC_bot
 ```
+
+## 🤖 Uso del bot en Telegram
+
+El bot está desplegado en Render utilizando el plan gratuito.
+
+⚠️ **Importante:**  
+En este plan, el servicio entra en reposo cuando no recibe tráfico.
+
+### 🔄 Cómo despertarlo
+
+Antes de usar el bot en Telegram, es necesario abrir el siguiente enlace en el navegador:
+
+👉 https://futbot-y5t9.onrender.com/
+
+Luego de unos segundos (hasta ~50s), el servicio se activa.
+
+### ⏱️ Tiempo activo
+
+Una vez despierto, el bot permanece activo aproximadamente **15 minutos** sin necesidad de volver a acceder al link.
+
+Durante ese tiempo podés usar el bot normalmente desde Telegram:
+
+👉 https://t.me/FutBot_MC_bot
+
+Si el bot no responde, simplemente volvé a abrir el link de Render para reactivarlo.
+
+*Este comportamiento es propio del plan gratuito de Render y no del bot en sí.*
