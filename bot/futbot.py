@@ -43,6 +43,7 @@ class FutBot:
     self._application.add_handler(CommandHandler("ayuda", self._command_handler.ayuda))
     self._application.add_handler(CommandHandler("hoy", self._command_handler.hoy))
     self._application.add_handler(CommandHandler("maniana", self._command_handler.maniana))
+    self._application.add_handler(CommandHandler("ayer", self._command_handler.ayer))
     self._application.add_handler(CommandHandler("tabla", self._command_handler.tabla))
     self._application.add_handler(CommandHandler("goleadores", self._command_handler.goleadores))
     self._application.add_handler(CommandHandler("equipos", self._command_handler.equipos))

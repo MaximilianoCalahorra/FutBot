@@ -1,7 +1,7 @@
 # ⚽ FutBot
 
 Asistente de Telegram que brinda información actualizada sobre las ligas europeas más prestigiosas:
-partidos del día, del siguiente y de la jornada, tabla de posiciones, top 10 de goleadores, información sobre los equipos, previa de los partidos e historial de enfrentamientos entre dos equipos.
+partidos del día, del siguiente, de ayer y de la jornada, tabla de posiciones, top 10 de goleadores, información sobre los equipos, previa de los partidos e historial de enfrentamientos entre dos equipos.
 
 ## 🏗️ Estructura actual del proyecto
 
@@ -40,7 +40,9 @@ futbot/
 | ------------------- | ----------------------------------------------------------------------- |
 | `/start`            | Da la bienvenida y explica las funciones del bot.                       |
 | `/ayuda`            | Lista todos los comandos disponibles.                                   |
-| `/hoy`              | Muestra los partidos del día en La Liga.                                |
+| `/hoy`              | Muestra los partidos del día en una liga.                                |
+| `/maniana`          | Muestra los partidos del día siguiente en una liga.                                |
+| `/ayer`             | Muestra los partidos del día anterior en una liga.                                |
 | `/tabla`            | Muestra la tabla de posiciones actualizada.                             |
 | `/goleadores`       | Muestra el top 10 de máximos goleadores del campeonato.                 |
 | `/equipos`          | Permite explorar información detallada de un equipo mediante botoneras. |
@@ -154,7 +156,32 @@ El comando `/maniana` muestra los partidos correspondientes al día siguiente de
 
 ---
 
-### 🏆 Comando `/tabla`
+### 📅 Comando `/ayer`
+
+El comando `/ayer` muestra los partidos correspondientes al día anterior de la liga seleccionada .
+
+🔹 **Flujo de uso**
+
+1. El usuario ejecuta el comando: `/ayer`
+
+2. El bot obtiene los partidos del día desde la API.
+
+3. Para cada partido, el bot muestra el resultado final y los eventos destacados, tales como:
+    - ⚽️ Gol
+
+    - ⚽️(P) Gol de penal
+
+    - ⚽️(EC) Gol en contra
+
+    - 🔄 Cambios
+
+    - 🟥 Tarjetas rojas
+
+    - 🟨 Tarjetas amarillas
+
+---
+
+### 📊 Comando `/tabla`
 
 El comando `/tabla` muestra la tabla de posiciones actualizada de la liga seleccionada.
 
@@ -364,7 +391,7 @@ El formato se adapta dinámicamente según el estado del partido, y cada partido
 
 ---
 
-### 📅 Comando `/ligas`
+### 🏆 Comando `/ligas`
 
 El comando `/ligas` permite al usuario indicar al bot sobre cuál de las ligas disponibles quiere obtener información.
 
@@ -385,7 +412,7 @@ El bot combina información obtenida desde dos APIs para cubrir todos los datos 
 https://api.football-data.org/v4/
 
 Usada para:
-- Partidos del día, del día siguiente y de la jornada.
+- Partidos del día, del día siguiente, de ayer y de la jornada.
 - Tabla de posiciones.
 - Ranking de goleadores.
 - Información sobre los equipos.
