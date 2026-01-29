@@ -198,7 +198,7 @@ TEAMS = {
   "west_ham": {
     "canonical": "West Ham",
     "football_data": ["West Ham United FC"],
-    "soccerdata": ["West Ham"]
+    "soccerdata": ["West Ham United"]
   },
   "wolverhampton": {
     "canonical": "Wolverhampton",

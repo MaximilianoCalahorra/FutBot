@@ -184,41 +184,50 @@ def formatear_eventos(eventos, local, visitante):
 
 def formatear_clima(descripcion: str, temp_c: float | None = None) -> str:
   desc = descripcion.lower().strip()
-  
-  if "thunder" in desc or "storm" in desc:
+
+  if any(k in desc for k in ("thunder", "storm", "thundery")):
     texto, emoji = "Tormenta", "⛈️"
 
-  elif "snow" in desc:
-    texto, emoji = "Nieve", "❄️"
+  elif any(k in desc for k in ("snow", "sleet", "ice", "freezing")):
+    texto, emoji = "Nieve / hielo", "❄️"
 
-  elif "heavy rain" in desc:
+  elif any(k in desc for k in ("heavy rain", "torrential", "downpour")):
     texto, emoji = "Lluvia fuerte", "🌧️"
 
-  elif "light rain" in desc or "rain shower" in desc or "shower" in desc:
+  elif any(k in desc for k in (
+    "light rain", "drizzle", "shower", "patchy rain",
+    "scattered showers", "intermittent rain"
+  )):
     texto, emoji = "Lluvia ligera", "🌦️"
 
   elif "rain" in desc:
     texto, emoji = "Lluvia", "🌧️"
 
-  elif "fog" in desc or "mist" in desc:
+  elif any(k in desc for k in ("fog", "mist", "haze", "smoke")):
     texto, emoji = "Neblina", "🌫️"
 
-  elif "overcast" in desc:
-    texto, emoji = "Cubierto", "☁️"
+  elif any(k in desc for k in ("overcast", "broken clouds", "mostly cloudy")):
+    texto, emoji = "Muy nublado", "☁️"
+
+  elif any(k in desc for k in ("partly cloudy", "few clouds")):
+    texto, emoji = "Parcialmente nublado", "🌥️"
 
   elif "cloud" in desc:
     texto, emoji = "Nublado", "☁️"
 
-  elif "sun" in desc or "clear" in desc:
+  elif any(k in desc for k in ("windy", "breezy", "gusty")):
+    texto, emoji = "Ventoso", "💨"
+
+  elif any(k in desc for k in ("sun", "clear", "fair")):
     texto, emoji = "Despejado", "☀️"
 
   else:
-    texto, emoji = "Clima variable", "🌡️"
+    texto, emoji = "Condiciones variables", "🌡️"
 
   if temp_c is not None:
     return f"{emoji} {texto} · {round(temp_c)}°C\n"
 
-  return f"{emoji} {texto} · {round(temp_c)}°C\n"
+  return f"{emoji} {texto}\n"
 
 def formatear_expectativa(valor):
   expectativa = "🔥 Expectativa:"

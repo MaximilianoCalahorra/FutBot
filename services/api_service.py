@@ -60,8 +60,25 @@ class ApiService:
     
     async with self._session.get(url) as response:
       data = await procesar_respuesta(response)
+      
+    # Obtener la información completa de los partidos:
+    stages = data[0].get("stage", []) if data else []
+
+    partidos_completo = []
+
+    if not stages:
+      partidos_completo = []
+
+    elif id_liga_sd == "235":
+      # En la Ligue 1 a veces los partidos reales están en el segundo stage:
+      if len(stages) > 1 and "matches" in stages[1]:
+        partidos_completo = stages[1].get("matches", [])
+      else:
+        partidos_completo = stages[0].get("matches", [])
+
+    else:
+      partidos_completo = stages[0].get("matches", [])
     
-    partidos_completo = data[0]["stage"][0]["matches"] if data[0].get("stage") else []
     partidos = []
     
     for partido in partidos_completo:
@@ -71,46 +88,55 @@ class ApiService:
       clave_equipo_local = normalizar_equipo(partido["teams"]["home"]["name"])
       clave_equipo_visitante = normalizar_equipo(partido["teams"]["away"]["name"])
       
-      # Carga de nombres e identificación de partido None vs None si corresponde:
-      equipo_local = "None"
-      equipo_visitante = "None"
-      eventos_sin_equipo = "NO"
-      if clave_equipo_local != None and clave_equipo_visitante != None:
-        equipo_local = TEAMS[clave_equipo_local]["canonical"]
-        equipo_visitante = TEAMS[clave_equipo_visitante]["canonical"]
+      # Solo se consideran partidos None vs None si es de La Liga, sino deben tener los nombres de los equipos:
+      if (
+        clave_equipo_local is None
+        and clave_equipo_visitante is None
+        and id_liga_sd != "297"
+      ):
+        continue
       else:
-        eventos_sin_equipo = "SI"
       
-      id_partido = partido["id"]
-      estado = partido["status"]
-      minutos = partido["minute"]
-      marcador_local = partido["goals"]["home_ft_goals"]
-      marcador_visitante = partido["goals"]["away_ft_goals"]
-      eventos = partido["events"]
-      
-      if partido["status"] == estado_partido or (estado_partido == "live" and partido["status"] == "halftime"):
-        if estado == "pre-match":
-          marcador = "vs"
+        # Carga de nombres e identificación de partido None vs None si corresponde:
+        equipo_local = "None"
+        equipo_visitante = "None"
+        eventos_sin_equipo = "NO"
+        if clave_equipo_local != None and clave_equipo_visitante != None:
+          equipo_local = TEAMS[clave_equipo_local]["canonical"]
+          equipo_visitante = TEAMS[clave_equipo_visitante]["canonical"]
         else:
-          marcador = f"{marcador_local} - {marcador_visitante}"
+          eventos_sin_equipo = "SI"
+        
+        id_partido = partido["id"]
+        estado = partido["status"]
+        minutos = partido["minute"]
+        marcador_local = partido["goals"]["home_ft_goals"]
+        marcador_visitante = partido["goals"]["away_ft_goals"]
+        eventos = partido["events"]
+        
+        if partido["status"] == estado_partido or (estado_partido == "live" and partido["status"] == "halftime"):
+          if estado == "pre-match":
+            marcador = "vs"
+          else:
+            marcador = f"{marcador_local} - {marcador_visitante}"
+            
+          partido_agregar = {
+            "id": id_partido,
+            "fecha": fecha,
+            "hora": hora,
+            "estado": estado,
+            "minutos": minutos,
+            "local": equipo_local,
+            "visitante": equipo_visitante,
+            "marcador": marcador,
+            "eventos": eventos
+          }
           
-        partido_agregar = {
-          "id": id_partido,
-          "fecha": fecha,
-          "hora": hora,
-          "estado": estado,
-          "minutos": minutos,
-          "local": equipo_local,
-          "visitante": equipo_visitante,
-          "marcador": marcador,
-          "eventos": eventos
-        }
-        
-        # Si es un partido None vs None levanto el flag:
-        if eventos_sin_equipo == "SI":
-          partido_agregar["flag_eventos_sin_equipo"] = "SI"
-        
-        partidos.append(partido_agregar)
+          # Si es un partido None vs None levanto el flag:
+          if eventos_sin_equipo == "SI":
+            partido_agregar["flag_eventos_sin_equipo"] = "SI"
+          
+          partidos.append(partido_agregar)
       
     return partidos   
     
@@ -345,21 +371,49 @@ class ApiService:
     async with self._session.get(url) as response:
       data = await procesar_respuesta(response)
     
-    partidos_completo = data[0]["stage"][0]["matches"] if data[0].get("stage") else []  # Respuesta completa de la API sobre los partidos.
+    # Obtener la información completa de los partidos:
+    stages = data[0].get("stage", []) if data else []
+
+    partidos_completo = []
+
+    if not stages:
+      partidos_completo = []
+
+    elif id_liga_sd == "235":
+      # En la Ligue 1 a veces los partidos reales están en el segundo stage:
+      if len(stages) > 1 and "matches" in stages[1]:
+        partidos_completo = stages[1].get("matches", [])
+      else:
+        partidos_completo = stages[0].get("matches", [])
+
+    else:
+      partidos_completo = stages[0].get("matches", [])
     
     eventos = []
     for partido in partidos_completo:
-      # Selecciono lo que me interesa de cada partido:
-      detalle_partido = {
-        "id": partido["id"],
-        "estado": partido["status"],
-        "minutos": partido["minute"],
-        "local_key": normalizar_equipo(partido["teams"]["home"]["name"]),
-        "visitante_key": normalizar_equipo(partido["teams"]["away"]["name"]),
-        "eventos": partido["events"]
-      }
+      clave_equipo_local = normalizar_equipo(partido["teams"]["home"]["name"])
+      clave_equipo_visitante = normalizar_equipo(partido["teams"]["away"]["name"])
       
-      eventos.append(detalle_partido)
+      # Solo traigo eventos que no tengan equipos None, salvo que sea el caso especial de La Liga:
+      if (
+        clave_equipo_local is None
+        and clave_equipo_visitante is None
+        and id_liga_sd != "297"
+      ):
+        continue
+      else:
+      
+        # Selecciono lo que me interesa de cada partido:
+        detalle_partido = {
+          "id": partido["id"],
+          "estado": partido["status"],
+          "minutos": partido["minute"],
+          "local_key": clave_equipo_local,
+          "visitante_key": clave_equipo_visitante,
+          "eventos": partido["events"]
+        }
+        
+        eventos.append(detalle_partido)
     
     return eventos
   
@@ -451,8 +505,8 @@ class ApiService:
       
       partidos_jornada.append(partido_jornada)
     
-    # Si hubo algún evento sin asignar a un partido:
-    if eventos_huerfanos:
+    # Si hubo algún evento sin asignar a un partido y son de La Liga:
+    if eventos_huerfanos and id_liga_sd == "297":
       # Recorro los partidos hasta encontrar el que está sin eventos:
       for partido in partidos_jornada:
         # Si no tiene eventos y no es un partido pospuesto:

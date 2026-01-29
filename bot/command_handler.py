@@ -694,7 +694,7 @@ class CommandHandlerBot:
     # Obtener id del partido:
     _, id = query.data.split("_")
     id_partido = int(id)
-
+    
     # Obtener previa del partido:
     cache_key = f"previa_{id_partido}"
     previa = context.user_data.get(cache_key)
@@ -756,7 +756,7 @@ class CommandHandlerBot:
     cache_key = f"historial_{id_partido}"
     historial = context.user_data.get(cache_key)
     
-    id_liga_fd = context.user_data.get("liga_fd", "PD")
+    id_liga_fd = context.user_data["liga"]["fd"]
 
     # En caso de que no esté en cache, lo solicita a la API:
     if not historial:
