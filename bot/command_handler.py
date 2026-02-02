@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from utils.formatters import formatear_clasificacion_tabla, formatear_partido, formatear_goleadores, formatear_equipo, formatear_entrenador, agrupar_plantel_por_posicion, formatear_grupo_plantel, formatear_racha, formatear_proximos_partidos, formatear_previa_partido, formatear_partidos_historial, datos_liga
 from utils.handler_utils import ejecutar_con_manejo
-from bot.keyboards import teclado_partido, teclado_partidos_hoy, teclado_equipos, teclado_equipo, teclado_plantel, teclado_menu_liga, teclado_ligas
+from bot.keyboards import teclado_partido, teclado_partidos_hoy, teclado_equipos, teclado_equipo, teclado_plantel, teclado_menu_liga, teclado_ligas, teclado_eliminatorias
 
 class CommandHandlerBot:
   """
@@ -78,7 +78,9 @@ class CommandHandlerBot:
       "📅 <b>/maniana</b> — Partidos de mañana\n"
       "🥅 <b>/goleadores</b> — Máximos goleadores\n"
       "🛡️ <b>/equipos</b> — Información de equipos\n"
-      "🗓️ <b>/jornada &lt;número&gt;</b> — Partidos de una jornada\n\n"
+      "🗓️ <b>/jornada &lt;número&gt;</b> — Partidos de una jornada\n"
+      "🗓️ <b>/ligas</b> — Selección de una competición para hacer consultas\n"
+      "🗓️ <b>/eliminatorias</b> — Partidos de la Champions League agrupados por instancia\n\n"
     )
     
     await self._responder(update, context, texto)
@@ -88,21 +90,22 @@ class CommandHandlerBot:
     await query.answer("⏳ Cargando menú de la liga...")
     _, id_liga_football_data, id_liga_soccerdata = query.data.split("_")  # Obtener id de la liga seleccionada en las APIs.
     
-    nombre_liga, bandera, reglas_posiciones = datos_liga(id_liga_football_data)
+    nombre_liga, bandera, reglas_posiciones, jornadas = datos_liga(id_liga_football_data)
     
     context.user_data["liga"] = {
       "fd": id_liga_football_data,
       "sd": id_liga_soccerdata,
       "nombre": nombre_liga,
       "bandera": bandera,
-      "reglas_posiciones": reglas_posiciones 
+      "reglas_posiciones": reglas_posiciones,
+      "jornadas": jornadas
     }
     
     texto = f"¿Qué querés consultar?"
     
     await query.message.reply_html(
       texto,
-      reply_markup=teclado_menu_liga()
+      reply_markup=teclado_menu_liga(id_liga_football_data)
     )
   
   async def liga_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -121,6 +124,7 @@ class CommandHandlerBot:
       "liga_equipos": "⏳ Cargando equipos...",
       "liga_jornada": "⏳ Cargando jornada...",
       "liga_ayuda": "ℹ️ Mostrando ayuda...",
+      "liga_eliminatorias": "⏳ Cargando eliminatorias..."
     }
 
     await query.answer(
@@ -151,6 +155,9 @@ class CommandHandlerBot:
     
     elif accion == "liga_ayuda":
       await self.ayuda(update, context)
+      
+    elif accion == "liga_eliminatorias":
+      await self.eliminatorias(update, context)
    
   async def ligas(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -170,14 +177,15 @@ class CommandHandlerBot:
     await query.answer("✅ Liga seleccionada")
     _, id_liga_football_data, id_liga_soccerdata = query.data.split("_")  # Obtener id de la liga seleccionada en las APIs.
     
-    nombre_liga, bandera, reglas_posiciones = datos_liga(id_liga_football_data)
+    nombre_liga, bandera, reglas_posiciones, jornadas = datos_liga(id_liga_football_data)
     
     context.user_data["liga"] = {
       "fd": id_liga_football_data,
       "sd": id_liga_soccerdata,
       "nombre": nombre_liga,
       "bandera": bandera,
-      "reglas_posiciones": reglas_posiciones 
+      "reglas_posiciones": reglas_posiciones,
+      "jornadas": jornadas
     }
     
     texto_base = f"✅ <b>Liga seleccionada:</b> {nombre_liga} {bandera}\n\n"
@@ -295,10 +303,12 @@ class CommandHandlerBot:
     # Cargar los nuevos valores para el entorno y el partido solicitado:
     context.user_data[f"{scope}_index"] = index
     context.user_data["scope_actual"] = scope
+    
+    id_liga_fd = context.user_data["liga"]["fd"]
 
     # Acceder al partido solicitado y formatearlo:
     partido = partidos[index]
-    texto = formatear_partido(partido)
+    texto = formatear_partido(partido, id_liga_fd)
 
     # Construcción del teclado que acompaña al partido:
     reply_markup = teclado_partido(
@@ -463,6 +473,12 @@ class CommandHandlerBot:
     )
     
     if not clasificacion:
+      texto = "ℹ️ No hay tabla para mostrar."
+      await self._responder(
+        update,
+        context,
+        texto
+      )
       return
     
     texto = formatear_clasificacion_tabla(clasificacion, nombre_liga, bandera, reglas_posiciones)
@@ -491,6 +507,12 @@ class CommandHandlerBot:
     )
     
     if not goleadores:
+      texto = "ℹ️ No hay goleadores para mostrar."
+      await self._responder(
+        update,
+        context,
+        texto
+      )
       return
     
     texto = formatear_goleadores(goleadores, nombre_liga, bandera)
@@ -518,6 +540,12 @@ class CommandHandlerBot:
     )
     
     if not equipos:
+      texto = "ℹ️ No hay equipos para mostrar."
+      await self._responder(
+        update,
+        context,
+        texto
+      )
       return
 
     texto = "🛡️ Seleccioná un equipo:"
@@ -537,6 +565,12 @@ class CommandHandlerBot:
     )
     
     if not equipo:
+      texto = "ℹ️ No hay equipo para mostrar."
+      await self._responder(
+        update,
+        context,
+        texto
+      )
       return
     
     mensaje = formatear_equipo(equipo)
@@ -559,6 +593,12 @@ class CommandHandlerBot:
     )
     
     if not plantel:
+      texto = "ℹ️ No hay plantel para mostrar."
+      await self._responder(
+        update,
+        context,
+        texto
+      )
       return
     
     grupos = agrupar_plantel_por_posicion(plantel)
@@ -595,7 +635,7 @@ class CommandHandlerBot:
         parse_mode="HTML"
       )
 
-  async def equipo_entrenador_callback(self, update: Update, contenxt: ContextTypes.DEFAULT_TYPE):
+  async def equipo_entrenador_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer("⏳ Cargando entrenador...")
     
@@ -608,6 +648,12 @@ class CommandHandlerBot:
     )
     
     if not entrenador:
+      texto = "ℹ️ No hay entrenador para mostrar."
+      await self._responder(
+        update,
+        context,
+        texto
+      )
       return
          
     mensaje = formatear_entrenador(entrenador)
@@ -628,9 +674,15 @@ class CommandHandlerBot:
     )
     
     if not racha:
+      texto = "ℹ️ No hay racha para mostrar."
+      await self._responder(
+        update,
+        context,
+        texto
+      )
       return
     
-    mensaje = formatear_racha(racha, id_equipo)
+    mensaje = formatear_racha(racha, id_equipo, id_liga_fd)
     await query.message.reply_html(mensaje)
       
   async def equipo_proximos_partidos_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -648,9 +700,15 @@ class CommandHandlerBot:
     )
     
     if not proximos_partidos:
+      texto = "ℹ️ No hay próximos partidos para mostrar."
+      await self._responder(
+        update,
+        context,
+        texto
+      )
       return
     
-    mensaje = formatear_proximos_partidos(proximos_partidos, id_equipo)
+    mensaje = formatear_proximos_partidos(proximos_partidos, id_equipo, id_liga_fd)
     await query.message.reply_html(mensaje)
   
   async def jornada_pedir_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -658,9 +716,11 @@ class CommandHandlerBot:
     await query.answer()
 
     context.user_data["esperando_jornada"] = True  # Bandera de que espero que el usuario indique una jornada.
+    
+    jornadas = context.user_data["liga"]["jornadas"]
 
     await query.message.reply_text(
-      "📅 Ingresá el número de jornada que querés ver (1–38):"
+      f"📅 Ingresá el número de jornada que querés ver (1–{jornadas}):"
     )
   
   async def jornada_desde_mensaje(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -676,8 +736,9 @@ class CommandHandlerBot:
 
     jornada = int(texto)
 
-    if jornada < 1 or jornada > 38:
-      await update.message.reply_text("ℹ️ Las jornadas válidas son de la 1 a la 38.")
+    jornadas = context.user_data["liga"]["jornadas"]
+    if jornada < 1 or jornada > jornadas:
+      await update.message.reply_text(f"ℹ️ Las jornadas válidas son de la 1 a la {jornadas}.")
       return
 
     # Limpiamos el estado:
@@ -697,6 +758,12 @@ class CommandHandlerBot:
     )
     
     if not partidos:
+      texto = "ℹ️ No hay partidos para mostrar."
+      await self._responder(
+        update,
+        context,
+        texto
+      )
       return
     
     scope = "jornada"
@@ -742,15 +809,16 @@ class CommandHandlerBot:
 
     jornada = int(context.args[0])
 
-    if jornada < 1 or jornada > 38:
-      await update.message.reply_text("ℹ️ Las jornadas válidas son de la 1 a la 38.")
-      return
-  
     if not self._liga_seleccionada(context):
       context.user_data["comando_pendiente"] = f"jornada {jornada}"
       await self._pedir_liga(update)
       return
-    
+
+    jornadas = context.user_data["liga"]["jornadas"]
+    if jornada < 1 or jornada > jornadas:
+      await update.message.reply_text(f"ℹ️ Las jornadas válidas son de la 1 a la {jornadas}.")
+      return
+  
     if update.message:
       await update.message.reply_text(f"⏳ Cargando jornada {jornada}...")
 
@@ -778,6 +846,12 @@ class CommandHandlerBot:
       context.user_data[cache_key] = previa  # Guarda en cache la previa para reducir solicitudes.
 
     if not previa:
+      texto = "ℹ️ No hay previa para mostrar."
+      await self._responder(
+        update,
+        context,
+        texto
+      )
       return
 
     texto_previa = formatear_previa_partido(previa)
@@ -837,6 +911,12 @@ class CommandHandlerBot:
       context.user_data[cache_key] = historial  # Guarda en cache el historial para reducir solicitudes.
 
     if not historial:
+      texto = "ℹ️ No hay historial para mostrar."
+      await self._responder(
+        update,
+        context,
+        texto
+      )
       return
 
     texto_historial = formatear_partidos_historial(historial)
@@ -871,3 +951,71 @@ class CommandHandlerBot:
       parse_mode="HTML",
       reply_markup=reply_markup
     )
+  
+  async def eliminatorias(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Responde al comando /eliminatorias o al botón que lo llama.
+    """
+    if update.message:
+      await update.message.reply_text("⏳ Cargando eliminatorias...")
+      
+    nombre_liga, bandera, reglas_posiciones, jornadas = datos_liga("CL")
+    
+    context.user_data["liga"] = {
+      "fd": "CL",
+      "sd": "",
+      "nombre": nombre_liga,
+      "bandera": bandera,
+      "reglas_posiciones": reglas_posiciones,
+      "jornadas": jornadas
+    }
+    
+    # Armado de la botonera:
+    texto = (
+      f"{bandera} {nombre_liga}\n"
+      "⚔️ Seleccioná una instancia:"
+    )
+    teclado = teclado_eliminatorias()
+    await self._responder(update, context, texto, teclado)
+
+  async def eliminatorias_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer("⏳ Cargando partidos de la eliminatoria...")
+
+    _, instancia = query.data.split("_")  # Obtener instancia solicitada de las eliminatorias.
+    
+    id_liga_fd = context.user_data["liga"]["fd"]
+
+    partidos = await ejecutar_con_manejo(
+      update,
+      lambda: self._api_service.obtener_partidos_eliminatorias(instancia, id_liga_fd),
+      mensaje_not_found="ℹ️ No hay partidos para mostrar."
+    )
+    
+    if not partidos:
+      await query.message.reply_text("ℹ️ No hay partidos para mostrar.")
+      return
+
+    # Carga de valores útiles:
+    scope = "eliminatorias"
+    index = 0
+
+    context.user_data["eliminatorias_partidos"] = partidos
+    context.user_data["eliminatorias_index"] = index
+    context.user_data["scope_actual"] = scope
+
+    texto = formatear_partido(partidos[index], id_liga_fd)
+    
+    # Construcción del teclado que acompaña a cada partido:
+    reply_markup = teclado_partido(
+      scope=scope,  # Para qué comando es el teclado.
+      index=index,  # Partido a mostrar.
+      total=len(partidos),  # Cantidad de partidos.
+      mostrar_previa=None, 
+      id_partido=None, 
+      mostrar_historial=True,
+      id_partido_football_data=partidos[index]["id_partido_football_data"]
+    )
+
+    sent = await query.message.reply_html(texto, reply_markup=reply_markup)
+    context.user_data[f"{scope}_message_id"] = sent.message_id

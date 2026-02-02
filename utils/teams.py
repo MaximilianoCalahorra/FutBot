@@ -796,6 +796,59 @@ TEAMS = {
     "canonical": "Zwolle",
     "football_data": ["PEC Zwolle"],
     "soccerdata": ["PEC Zwolle"]
+  },
+  
+  # Champions League:
+  # Ya están previamente: Leverkusen, Dortmund, Bayern, Frankfurt, Arsenal, Chelsea, Liverpool, Manchester City, Newcastle, Tottenham, Athletic, Atlético de Madrid, Barcelona, Real Madrid, Villarreal, Atalanta, Inter, Juventus, Napoli, Sporting, Marsella, PSG, Monaco, PSV, Ajax y Benfica.
+  "bodo_glimt": {
+    "canonical": "Bodø/Glimt",
+    "football_data": ["FK Bodø/Glimt"],
+    "soccerdata": ["Bodø/Glimt"]
+  },
+  "brugge": {
+    "canonical": "Brugge",
+    "football_data": ["Club Brugge KV"],
+    "soccerdata": ["Brugge"]
+  },
+  "galatasaray": {
+    "canonical": "Galatasaray",
+    "football_data": ["Galatasaray SK"],
+    "soccerdata": ["Galatasaray"]
+  },
+  "qarabag": {
+    "canonical": "Qarabag",
+    "football_data": ["Qarabağ Ağdam FK"],
+    "soccerdata": ["Qarabag"]
+  },
+  "kairat": {
+    "canonical": "Kairat",
+    "football_data": ["FK Kairat"],
+    "soccerdata": ["Kairat"]
+  },
+  "kobenhavn": {
+    "canonical": "København",
+    "football_data": ["FC København"],
+    "soccerdata": ["København"]
+  },
+  "olympiakos": {
+    "canonical": "Olympiakos",
+    "football_data": ["PAE Olympiakos SFP"],
+    "soccerdata": ["Olympiakos"]
+  },
+  "paphos": {
+    "canonical": "Paphos",
+    "football_data": ["Paphos FC"],
+    "soccerdata": ["Paphos"]
+  },
+  "slavia_praha": {
+    "canonical": "Slavia Praha",
+    "football_data": ["SK Slavia Praha"],
+    "soccerdata": ["Slavia Praha"]
+  },
+  "union_sg": {
+    "canonical": "Union SG",
+    "football_data": ["Royale Union Saint-Gilloise"],
+    "soccerdata": ["Union SG"]
   }
 }
 

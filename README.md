@@ -36,18 +36,19 @@ futbot/
 
 ## ⚙️ Comandos implementados
 
-| Comando             | Descripción                                                             |
-| ------------------- | ----------------------------------------------------------------------- |
-| `/start`            | Da la bienvenida y explica las funciones del bot.                       |
-| `/ayuda`            | Lista todos los comandos disponibles.                                   |
+| Comando             | Descripción                                                              |
+| ------------------- | ------------------------------------------------------------------------ |
+| `/start`            | Da la bienvenida y explica las funciones del bot.                        |
+| `/ayuda`            | Lista todos los comandos disponibles.                                    |
 | `/hoy`              | Muestra los partidos del día en una liga.                                |
-| `/maniana`          | Muestra los partidos del día siguiente en una liga.                                |
-| `/ayer`             | Muestra los partidos del día anterior en una liga.                                |
-| `/tabla`            | Muestra la tabla de posiciones actualizada.                             |
-| `/goleadores`       | Muestra el top 10 de máximos goleadores del campeonato.                 |
-| `/equipos`          | Permite explorar información detallada de un equipo mediante botoneras. |
-| `/jornada <número>` | Muestra los partidos de la jornada solicitada.                          |
-| `/ligas`            | Permite seleccionar la liga sobre la cual se hacen las consultas.       |
+| `/maniana`          | Muestra los partidos del día siguiente en una liga.                      |
+| `/ayer`             | Muestra los partidos del día anterior en una liga.                       |
+| `/tabla`            | Muestra la tabla de posiciones actualizada.                              |
+| `/goleadores`       | Muestra el top 10 de máximos goleadores del campeonato.                  |
+| `/equipos`          | Permite explorar información detallada de un equipo mediante botoneras.  |
+| `/jornada <número>` | Muestra los partidos de la jornada solicitada.                           |
+| `/ligas`            | Permite seleccionar la liga sobre la cual se hacen las consultas.        |
+| `/eliminatorias`    | Muestra los partidos de Champions League de una instancia en específico. |
 
 A su vez, **todas estas funcionalidades también son accesibles a través del menú principal del bot**, ofrecido por el mismo cuando el usuario ejecuta el comando `/start`.
 
@@ -403,6 +404,20 @@ El comando `/ligas` permite al usuario indicar al bot sobre cuál de las ligas d
 
 ---
 
+### ⚔️ Comando `/eliminatorias`
+
+El comando `/eliminatorias` permite al usuario seleccionar una instancia de la Champions League y obtener los cruces correspondientes a la misma. Por cada uno de los partidos se indica fecha y hora, equipos implicados y resultado del mismo en caso de que sea un partido en juego o finalizado.
+
+🔹 **Flujo de uso**
+
+1. El usuario ejecuta el comando: `/eliminatorias` y selecciona una de las opciones presentadas.
+
+2. El bot registra esa elección y devuelve los partidos correspondientes de a uno por mensaje, permitiendo al usuario interactuar con los botones para desplazarse por los mismos.
+
+⚠️ No se detallan los eventos sucedidos en cada partido, como sí en otros comandos, porque las APIs que utilizo no me brindan esa información.
+
+---
+
 ## 🌐 APIs utilizadas
 
 El bot combina información obtenida desde dos APIs para cubrir todos los datos necesarios:
@@ -451,13 +466,13 @@ GROQ_API_KEY=tu_api_key_de_groq
 
 - Expone claves de APIs y parámetros de configuración generales.
 
-- Define constantes como:
+- Obtiene el valor y da acceso a constantes como:
 
-    - id de La Liga para ambas APIs
+    - API keys de FootballData, Soccerdata y Groq
 
-    - Zona horaria y formatos de fecha
+    - Token de Telegram
 
-    - URLs base de cada API
+    - URLs base de cada API de fútbol
 
 Incluye validaciones para asegurar que el bot no se ejecute con claves ausentes.
 
@@ -469,13 +484,15 @@ Capa intermedia encargada de interactuar con las APIs externas.
 
 Encapsula peticiones como:
 
-- Partidos del día y sus eventos
+- Partidos del día, de mañana, de ayer y de una jornada en específico, y sus eventos
 
 - Tabla completa
 
 - Goleadores
 
 - Equipos
+
+- Etcétera
 
 Esto permite que el resto del código no dependa de detalles HTTP.
 
@@ -498,6 +515,8 @@ Conjunto de funciones responsables de dar forma a los mensajes enviados al usuar
 - Entrenador
 
 - Plantel completo
+
+- Etcétera
 
 Separar esta lógica permite mantener el bot modular y escalable.
 
@@ -557,4 +576,33 @@ cp .env.example .env
 
 # Ejecutar el bot
 python main.py
+
+# Acceder al chat en Telegram: https://t.me/FutBot_MC_bot
 ```
+
+## 🤖 Uso del bot en Telegram
+
+El bot está desplegado en Render utilizando el plan gratuito.
+
+⚠️ **Importante:**  
+En este plan, el servicio entra en reposo cuando no recibe tráfico.
+
+### 🔄 Cómo despertarlo
+
+Antes de usar el bot en Telegram, es necesario abrir el siguiente enlace en el navegador:
+
+👉 https://futbot-y5t9.onrender.com/
+
+Luego de unos segundos (hasta ~50s), el servicio se activa.
+
+### ⏱️ Tiempo activo
+
+Una vez despierto, el bot permanece activo aproximadamente **15 minutos** sin necesidad de volver a acceder al link.
+
+Durante ese tiempo podés usar el bot normalmente desde Telegram:
+
+👉 https://t.me/FutBot_MC_bot
+
+Si el bot no responde, simplemente volvé a abrir el link de Render para reactivarlo.
+
+*Este comportamiento es propio del plan gratuito de Render y no del bot en sí.*
