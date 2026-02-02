@@ -49,6 +49,7 @@ class FutBot:
     self._application.add_handler(CommandHandler("equipos", self._command_handler.equipos))
     self._application.add_handler(CommandHandler("jornada", self._command_handler.jornada))
     self._application.add_handler(CommandHandler("ligas", self._command_handler.ligas))
+    self._application.add_handler(CommandHandler("eliminatorias", self._command_handler.eliminatorias))
     
     # Menú principal:
     self._application.add_handler(CallbackQueryHandler(self._command_handler.menu_callback, pattern="^menu_"))
@@ -75,6 +76,9 @@ class FutBot:
     # Jornada:
     self._application.add_handler(CallbackQueryHandler(self._command_handler.jornada_pedir_callback, pattern="^jornada_pedir$"))
     self._application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self._command_handler.jornada_desde_mensaje))
+    
+    # Eliminatorias:
+    self._application.add_handler(CallbackQueryHandler(self._command_handler.eliminatorias_callback, pattern="^eliminatorias_"))
     
     # Previa:
     self._application.add_handler(CallbackQueryHandler(self._command_handler.previa_partido_callback, pattern="^previa_"))

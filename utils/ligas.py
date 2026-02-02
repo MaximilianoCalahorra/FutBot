@@ -9,7 +9,8 @@ LIGAS = {
       "europa": [5],
       "conference": [6],
       "descenso": range(18, 21)
-    }
+    },
+    "jornadas": 38
   },
   "premier_league": {
     "nombre": "Premier League",
@@ -20,7 +21,8 @@ LIGAS = {
       "champions": range(1, 5),
       "europa": [5],
       "descenso": range(18, 21)
-    }
+    },
+    "jornadas": 38
   },
   "championship": {
     "nombre": "Championship",
@@ -31,7 +33,8 @@ LIGAS = {
       "ascenso": [1, 2],
       "playoff_ascenso": range(3, 7),
       "descenso": range(22, 25)
-    }
+    },
+    "jornadas": 46
   },
   "bundesliga": {
     "nombre": "Bundesliga",
@@ -44,7 +47,8 @@ LIGAS = {
       "conference": [6],
       "repechaje_descenso": [16],
       "descenso": [17, 18]
-    }
+    },
+    "jornadas": 36
   },
   "serie_a": {
     "nombre": "Serie A",
@@ -56,7 +60,8 @@ LIGAS = {
       "europa": [5],
       "conference": [6],
       "descenso": range(18, 21)
-    }
+    },
+    "jornadas": 38
   },
   "ligue_1": {
     "nombre": "Ligue 1",
@@ -70,7 +75,8 @@ LIGAS = {
       "conference": [6],
       "repechaje_descenso": [16],
       "descenso": [17, 18]
-    }
+    },
+    "jornadas": 36
   },
   "primeira_liga": {
     "nombre": "Primeira Liga",
@@ -83,7 +89,8 @@ LIGAS = {
       "conference": [3, 4],
       "repechaje_descenso": [16],
       "descenso": [17, 18]
-    }
+    },
+    "jornadas": 36
   },
   "eredivisie": {
     "nombre": "Eredivisie",
@@ -97,7 +104,28 @@ LIGAS = {
       "conference_q": range(5, 9),
       "repechaje_descenso": [16],
       "descenso": [17, 18]
-    }
+    },
+    "jornadas": 36
+  },
+  "champions_league": {
+    "nombre": "UEFA Champions League",
+    "football_data": "CL",
+    "soccerdata": 0,
+    "bandera": "🇪🇺",
+    "reglas_posiciones": {
+      "octavos": range(1, 9),
+      "playoffs": range(9, 25),
+      "no_clasificado": range(25, 37)
+    },
+    "instancias": {
+      "LEAGUE_STAGE": "liga",
+      "PLAYOFFS": "playoffs",
+      "LAST_16": "octavos",
+      "QUARTER_FINALS": "cuartos",
+      "SEMI_FINALS": "semis",
+      "FINAL": "final"
+    },
+    "jornadas": 8
   }
 }
 
@@ -111,4 +139,7 @@ DESCRIPCIONES = {
   "playoff_ascenso": "Playoffs por el ascenso",
   "repechaje_descenso": "Repechaje por el descenso",
   "descenso": "Descenso",
+  "octavos": "Clasificación directa a octavos",
+  "playoffs": "Eliminatoria por cupo a octavos",
+  "no_clasificado": "Eliminado"
 }
