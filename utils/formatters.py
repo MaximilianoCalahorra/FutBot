@@ -7,7 +7,7 @@ def datos_liga(id_liga):
   
   for liga in LIGAS.values():
     if liga["football_data"] == id_liga or liga["soccerdata"] == id_liga:
-      datos_liga = (liga["nombre"], liga["bandera"], liga["reglas_posiciones"])
+      datos_liga = (liga["nombre"], liga["bandera"], liga["reglas_posiciones"], liga["jornadas"])
       break
   
   return datos_liga
@@ -22,6 +22,9 @@ EMOJIS = {
   "playoff_ascenso": "🔼",
   "repechaje_descenso": "🟨",
   "descenso": "🟥",
+  "octavos": "🟦",
+  "playoffs": "🔷",
+  "no_clasificado": "⬛"
 }
 
 def emoji_pos(pos, reglas):
@@ -44,6 +47,9 @@ ORDEN_LEYENDA = [
   "conference_q",
   "repechaje_descenso",
   "descenso",
+  "octavos",
+  "playoffs",
+  "no_clasificado"
 ]
 
 def generar_leyenda(reglas_posiciones):
@@ -261,7 +267,37 @@ def formatear_previa_partido(previa):
 
   return "\n".join(partes)
 
-def formatear_partido(partido):
+def formatear_informacion_instancia(partido, id_liga):
+  instancia = partido.get("instancia", "")
+  
+  if instancia == "":
+    return ""
+  
+  if id_liga == "CL" and instancia != "liga":
+    if instancia == "final":
+      texto = "· Final"
+    else:
+      if partido["jornada"] == 1:
+        numero_juego = "(ida)"
+      else:
+        numero_juego = "(vuelta)"
+    
+      if instancia == "playoffs":
+        texto = "· Playoffs"
+      elif instancia == "octavos":
+        texto = "· Octavos de final"
+      elif instancia == "cuartos":
+        texto = "· Cuartos de final"
+      else:
+        texto = "· Semifinal"
+      
+      texto += f" {numero_juego} "
+  else:
+    texto = f"· Jornada {partido['jornada']} "
+    
+  return texto
+
+def formatear_partido(partido, id_liga=""):
   estado = partido["estado"]
   eventos = partido["eventos"]
   local = partido["local"]
@@ -287,39 +323,41 @@ def formatear_partido(partido):
   if partido.get("id_partido_football_data", "") == "":
     historial = f"ℹ️ El historial de enfrentamientos está disponible solo cuando se consulta una jornada específica."
 
+  informacion_instancia = formatear_informacion_instancia(partido, id_liga)
+
   # Según el estado del partido lo mostramos de diferente manera:
-  if estado == "pre-match":  # Partido a futuro.
+  if estado in ("pre-match", "TIMED", "SCHEDULED"):  # Partido a futuro.
     return (
-      f"🕒 {fecha} {hora}\n"
+      f"🕒 {fecha} {hora} {informacion_instancia}\n"
       f"{local} vs {visitante}\n\n"
       f"{historial}\n"
       f"{previa_partido}\n"
     )
 
-  elif estado in ("live", "halftime"):  # Partido en juego o en el descanso.
+  elif estado in ("live", "halftime", "IN_PLAY", "PAUSED"):  # Partido en juego o en el descanso.
     tiempo = f"⏳ En juego - {partido['minutos']}'\n"
     if estado == "halftime":
       tiempo = "⏸️ Descanso\n"
     return (
-      f"🕒 {fecha} {hora}\n"
+      f"🕒 {fecha} {hora} {informacion_instancia}\n"
       f"{tiempo}"
       f"{local} {partido['marcador']} {visitante}\n"
       f"{eventos_formateados}\n"
       f"{historial}"
     )
-
-  elif estado == "finished":  # Partido finalizado.
+    
+  elif estado in ("finished", "FINISHED"):  # Partido finalizado.
     return (
-      f"🕒 {fecha} {hora}\n"
+      f"🕒 {fecha} {hora} {informacion_instancia}\n"
       f"🏁 Finalizado\n"
       f"{local} {partido['marcador']} {visitante}\n"
       f"{eventos_formateados}\n"
       f"{historial}"
     )
   
-  elif estado == "postponed":  # Partido pospuesto.
+  elif estado in ("postponed", "POSTPONED"):  # Partido pospuesto.
     return (
-      f"📅 ➡️ ⚽ Pospuesto\n"
+      f"📅 ➡️ ⚽ Pospuesto {informacion_instancia}\n"
       f"{local} vs {visitante}\n\n"
       f"{historial}"
     )
@@ -498,33 +536,74 @@ def obtener_resultado(partido, id_equipo):
 
   return "❌" 
 
-def formatear_racha(racha, id_equipo):
+def formatear_localia(partido, id_equipo):
+  localia = "✈️"
+  if partido["local"]["id"] == int(id_equipo):
+    localia = "🏠"
+  return localia
+
+def obtener_instancia(partido):
+  return LIGAS["champions_league"]["instancias"][partido["instancia"]]
+
+def formatear_informacion_partido(partido, id_liga):
+  if id_liga == "CL":
+    texto = f"<b>{partido['fecha']} {partido['hora']}</b> · "
+    
+    instancia = LIGAS["champions_league"]["instancias"][partido["instancia"]]
+    if instancia == "liga":
+      texto += f"Jornada {partido['jornada']} "
+    else:
+      if instancia == "final":
+        texto += " Final "
+      else:
+        if partido["jornada"] == 1:
+          numero_juego = "(ida)"
+        else:
+          numero_juego = "(vuelta)"
+      
+      if instancia == "playoffs":
+        texto += " Playoffs"
+      elif instancia == "octavos":
+        texto += " Octavos de final"
+      elif instancia == "cuartos":
+        texto += " Cuartos de final"
+      else:
+        texto += " Semifinal"
+      
+      texto += f" {numero_juego} "
+  else:
+    texto = f"<b>{partido['fecha']} {partido['hora']}</b> · Jornada {partido['jornada']} "
+    
+  return texto
+
+def formatear_racha(racha, id_equipo, id_liga=""):
   texto = "⚡ <b>Últimos 5 partidos</b>\n\n"
 
   for partido in racha:
     resultado = obtener_resultado(partido, id_equipo)
-    localia = "✈️"
-    if partido["local"]["id"] == int(id_equipo):
-      localia = "🏠"
+    
+    localia = formatear_localia(partido, id_equipo)
+    
+    informacion_partido = formatear_informacion_partido(partido, id_liga)
     
     texto += (
-      f"{resultado} <b>{partido['fecha']}</b> · Jornada {partido['jornada']} {localia}\n"
+      f"{resultado} {informacion_partido} {localia}\n"
       f"{partido['local']['nombre']} {partido['local']['goles']} "
       f"- {partido['visitante']['goles']} {partido['visitante']['nombre']}\n\n"
     )
 
   return texto
 
-def formatear_proximos_partidos(partidos, id_equipo):
+def formatear_proximos_partidos(partidos, id_equipo, id_liga=""):
   texto = "<b>🗓️ Próximos 5 partidos</b>\n\n"
   
   for partido in partidos:
-    localia = "✈️"
-    if partido["local"]["id"] == int(id_equipo):
-      localia = "🏠"
+    localia = formatear_localia(partido, id_equipo)
+    
+    informacion_partido = formatear_informacion_partido(partido, id_liga)
     
     texto += (
-      f"{localia} <b>{partido['fecha']} {partido['hora']}</b> · Jornada {partido['jornada']}\n"
+      f"{localia} {informacion_partido}\n"
       f"{partido['local']['nombre']} vs {partido['visitante']['nombre']}\n\n"
     )
   

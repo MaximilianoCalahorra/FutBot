@@ -1,6 +1,7 @@
 import aiohttp
 from utils.formatters import convertir_a_zona_horaria_argentina, normalizar_estado_partido, construir_texto_previa
 from utils.teams import normalizar_equipo, TEAMS
+from utils.ligas import LIGAS
 from services.http_utils import procesar_respuesta
 
 class ApiService:
@@ -309,7 +310,8 @@ class ApiService:
           "nombre": TEAMS[normalizar_equipo(partido["awayTeam"]["name"])]["canonical"],
           "goles": partido["score"]["fullTime"]["away"]
         },
-        "ganador": partido["score"]["winner"]
+        "ganador": partido["score"]["winner"],
+        "instancia": partido["stage"]
       }
       
       racha.append(partido_racha)
@@ -355,7 +357,8 @@ class ApiService:
         "visitante": {
           "id": partido["awayTeam"]["id"],
           "nombre": TEAMS[normalizar_equipo(partido["awayTeam"]["name"])]["canonical"]
-        }
+        },
+        "instancia": partido["stage"]
       }
       
       proximos_partidos.append(partido_por_jugar)
@@ -600,3 +603,60 @@ class ApiService:
         ultimos_partidos.append(partido)
     
     return ultimos_partidos
+
+  async def obtener_partidos_eliminatorias(self, instancia, id_liga_fd):
+    url = f"{self._football_data_api_url_base}/competitions/{id_liga_fd}/matches"
+    
+    headers = {
+      "X-Auth-Token": self._api_key_football_data,
+      "User-Agent": "FutBot/1.0"
+    }
+    
+    async with self._session.get(url, headers=headers) as response:
+      data = await procesar_respuesta(response)
+    
+    partidos_eliminatorias_completo = data["matches"]  # Partidos completos desde la API.
+    
+    # Normalización de la fecha y la hora de cada encuentro:  
+    for partido in partidos_eliminatorias_completo:
+      postponed = None
+      if partido["status"] == "POSTPONED":
+        postponed = "SI"
+      partido["fecha"], partido["hora"] = convertir_a_zona_horaria_argentina(partido["utcDate"], postponed=postponed)
+    
+    partidos_eliminatoria = []
+    for partido in partidos_eliminatorias_completo:
+      instancia_partido = LIGAS["champions_league"]["instancias"][partido["stage"]]
+      estado = partido["status"]
+      
+      # Si el partido es de la instancia solicitada y ya están definidos los equipos:
+      if instancia_partido == instancia and partido["homeTeam"]["name"] != None and partido["awayTeam"]["name"] != None:
+        marcador_local = partido["score"]["fullTime"]["home"]
+        marcador_visitante = partido["score"]["fullTime"]["away"]
+        
+        if estado == "TIMED":
+          marcador = "vs"
+        else:
+          marcador = f"{marcador_local} - {marcador_visitante}"
+        
+        partido_eliminatoria = {
+          "id_partido_football_data": partido["id"],
+          "fecha": partido["fecha"],
+          "hora": partido["hora"],
+          "estado": estado,
+          "jornada": partido["matchday"],
+          "local_key": normalizar_equipo(partido["homeTeam"]["name"]),
+          "visitante_key": normalizar_equipo(partido["awayTeam"]["name"]),
+          "ganador": partido["score"]["winner"],
+          "marcador": marcador,
+          "eventos": [],
+          "instancia": instancia_partido
+        }
+        
+        # Obtengo el nombre canónico que generé para cada equipo a partir de su clave:
+        partido_eliminatoria["local"] = TEAMS[partido_eliminatoria["local_key"]]["canonical"]
+        partido_eliminatoria["visitante"] = TEAMS[partido_eliminatoria["visitante_key"]]["canonical"]
+      
+        partidos_eliminatoria.append(partido_eliminatoria)
+
+    return partidos_eliminatoria

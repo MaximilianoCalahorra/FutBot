@@ -121,6 +121,7 @@ def teclado_ligas(callback):
   l1 = LIGAS["ligue_1"]
   er = LIGAS["eredivisie"]
   prl = LIGAS["primeira_liga"]
+  cl = LIGAS["champions_league"]
   
   return InlineKeyboardMarkup([
     [
@@ -138,11 +139,14 @@ def teclado_ligas(callback):
     [
       InlineKeyboardButton(f"{prl['bandera']} {prl['nombre']}", callback_data=f"{callback}{prl['football_data']}_{prl['soccerdata']}"),
       InlineKeyboardButton(f"{er['bandera']} {er['nombre']}", callback_data=f"{callback}{er['football_data']}_{er['soccerdata']}")
+    ],
+    [
+      InlineKeyboardButton(f"{cl['bandera']} {cl['nombre']}", callback_data=f"{callback}{cl['football_data']}_{cl['soccerdata']}")
     ]
   ])
   
-def teclado_menu_liga():
-  return InlineKeyboardMarkup([
+def teclado_menu_liga(id_liga):
+  filas = [
     [
       InlineKeyboardButton("📊 Tabla", callback_data="liga_tabla"),
       InlineKeyboardButton("🥅 Goleadores", callback_data="liga_goleadores")
@@ -154,9 +158,38 @@ def teclado_menu_liga():
     [
       InlineKeyboardButton("📅 Ayer", callback_data="liga_ayer"),
       InlineKeyboardButton("🗓️ Jornada", callback_data="liga_jornada")
-    ],
-    [
+    ]
+  ]
+
+  if id_liga == "CL":
+    filas.extend([
+      [
+        InlineKeyboardButton("⚔️ Eliminatorias", callback_data="liga_eliminatorias"),
+        InlineKeyboardButton("🛡️ Equipos", callback_data="liga_equipos")
+      ],
+      [
+        InlineKeyboardButton("ℹ️ Ayuda", callback_data="liga_ayuda")
+      ]
+    ])
+  else:
+    filas.append([
       InlineKeyboardButton("🛡️ Equipos", callback_data="liga_equipos"),
       InlineKeyboardButton("ℹ️ Ayuda", callback_data="liga_ayuda")
+    ])
+
+  return InlineKeyboardMarkup(filas)
+
+def teclado_eliminatorias():
+  return InlineKeyboardMarkup([
+    [
+      InlineKeyboardButton("🔷 Playoffs", callback_data="eliminatorias_playoffs"),
+      InlineKeyboardButton("⚔️ Octavos", callback_data="eliminatorias_octavos")
+    ],
+    [
+      InlineKeyboardButton("🎯 Cuartos", callback_data="eliminatorias_cuartos"),
+      InlineKeyboardButton("🔥 Semis", callback_data="eliminatorias_semis")
+    ],
+    [
+      InlineKeyboardButton("🏆 Final", callback_data="eliminatorias_final")
     ]
   ])
