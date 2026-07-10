@@ -302,14 +302,13 @@ class ApiService:
         "jornada": partido["matchday"],
         "local": {
           "id": partido["homeTeam"]["id"],
-          "nombre": TEAMS[normalizar_equipo(partido["homeTeam"]["name"])]["canonical"],
-          "goles": partido["score"]["fullTime"]["home"]
+          "nombre": TEAMS[normalizar_equipo(partido["homeTeam"]["name"])]["canonical"]
         },
         "visitante": {
           "id": partido["awayTeam"]["id"],
-          "nombre": TEAMS[normalizar_equipo(partido["awayTeam"]["name"])]["canonical"],
-          "goles": partido["score"]["fullTime"]["away"]
+          "nombre": TEAMS[normalizar_equipo(partido["awayTeam"]["name"])]["canonical"]
         },
+        "marcador": self.determinar_marcador_partido(partido, estado),
         "ganador": partido["score"]["winner"],
         "instancia": partido["stage"]
       }
@@ -576,8 +575,7 @@ class ApiService:
       # Solo me interesan partidos que hayan finalizado:
       if enfrentamiento["status"] == "FINISHED":
         fecha, hora = convertir_a_zona_horaria_argentina(enfrentamiento["utcDate"])
-        marcador_local = enfrentamiento["score"]["fullTime"]["home"]
-        marcador_visitante = enfrentamiento["score"]["fullTime"]["away"]
+
         local = TEAMS[normalizar_equipo(enfrentamiento["homeTeam"]["name"])]["canonical"]
         visitante = TEAMS[normalizar_equipo(enfrentamiento["awayTeam"]["name"])]["canonical"]
         
@@ -596,7 +594,7 @@ class ApiService:
           "jornada": enfrentamiento["matchday"],
           "local": local,
           "visitante": visitante,
-          "marcador": f"{marcador_local} - {marcador_visitante}",
+          "marcador": self.determinar_marcador_partido(partido, "FINISHED"),
           "ganador": ganador
         }
         
@@ -631,13 +629,6 @@ class ApiService:
       
       # Si el partido es de la instancia solicitada y ya están definidos los equipos:
       if instancia_partido == instancia and partido["homeTeam"]["name"] != None and partido["awayTeam"]["name"] != None:
-        marcador_local = partido["score"]["fullTime"]["home"]
-        marcador_visitante = partido["score"]["fullTime"]["away"]
-        
-        if estado == "TIMED":
-          marcador = "vs"
-        else:
-          marcador = f"{marcador_local} - {marcador_visitante}"
         
         partido_eliminatoria = {
           "id_partido_football_data": partido["id"],
@@ -648,7 +639,7 @@ class ApiService:
           "local_key": normalizar_equipo(partido["homeTeam"]["name"]),
           "visitante_key": normalizar_equipo(partido["awayTeam"]["name"]),
           "ganador": partido["score"]["winner"],
-          "marcador": marcador,
+          "marcador": self.determinar_marcador_partido(partido, estado),
           "eventos": [],
           "instancia": instancia_partido
         }
@@ -660,3 +651,28 @@ class ApiService:
         partidos_eliminatoria.append(partido_eliminatoria)
 
     return partidos_eliminatoria
+  
+  def determinar_marcador_partido(self, partido, estado):
+    # Si el partido terminó mediante penales:
+    if partido["score"].get("penalties"):
+      
+      # Diferenciar goles de cada equipo en el partido y en los penales:
+      goles_penal_local = partido['score']['penalties']['home']
+      goles_penal_visitante = partido['score']['penalties']['away']
+      goles_partido_local = partido['score']['fullTime']['home'] - partido['score']['penalties']['home']
+      goles_partido_visitante = partido['score']['fullTime']['away'] - partido['score']['penalties']['away']
+      
+      # Armado del marcador de cada equipo con esa diferenciación visual:
+      marcador_local = f"({goles_penal_local}) {goles_partido_local}"
+      marcador_visitante = f"{goles_partido_visitante} ({goles_penal_visitante})"
+    else:
+      marcador_local = partido["score"]["fullTime"]["home"]
+      marcador_visitante = partido["score"]["fullTime"]["away"]
+    
+    # Marcador en texto según el estado del partido:
+    if estado == "TIMED":
+      marcador = "vs"
+    else:
+      marcador = f"{marcador_local} - {marcador_visitante}"
+    
+    return marcador

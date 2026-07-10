@@ -588,8 +588,7 @@ def formatear_racha(racha, id_equipo, id_liga=""):
     
     texto += (
       f"{resultado} {informacion_partido} {localia}\n"
-      f"{partido['local']['nombre']} {partido['local']['goles']} "
-      f"- {partido['visitante']['goles']} {partido['visitante']['nombre']}\n\n"
+      f"{partido['local']['nombre']} {partido['marcador']} {partido['visitante']['nombre']}\n\n"
     )
 
   return texto
