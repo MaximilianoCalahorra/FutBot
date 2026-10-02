@@ -33,6 +33,11 @@ TEAMS = {
     "football_data": ["RC Celta de Vigo"],
     "soccerdata": ["Celta Vigo"]
   },
+  "deportivo": {
+    "canonical": "Deportivo",
+    "football_data": ["RC Deportivo La Coruña"],
+    "soccerdata": ["Deportivo La Coruna"]
+  },
   "elche": {
     "canonical": "Elche",
     "football_data": ["Elche CF"],
@@ -48,25 +53,25 @@ TEAMS = {
     "football_data": ["Getafe CF"],
     "soccerdata": ["Getafe"]
   },
-  "girona": {
-    "canonical": "Girona",
-    "football_data": ["Girona FC"],
-    "soccerdata": ["Girona"]
-  },
   "levante": {
     "canonical": "Levante",
     "football_data": ["Levante UD"],
     "soccerdata": ["Levante"]
   },
-  "mallorca": {
-    "canonical": "Mallorca",
-    "football_data": ["RCD Mallorca"],
-    "soccerdata": ["Mallorca"]
+  "malaga": {
+    "canonical": "Málaga",
+    "football_data": ["Málaga CF"],
+    "soccerdata": ["Malaga"]
   },
   "osasuna": {
     "canonical": "Osasuna",
     "football_data": ["CA Osasuna"],
     "soccerdata": ["Osasuna"]
+  },
+  "racing": {
+    "canonical": "Racing",
+    "football_data": ["Real Racing Club de Santander"],
+    "soccerdata": ["Racing Santander"]
   },
   "rayo": {
     "canonical": "Rayo",
@@ -77,11 +82,6 @@ TEAMS = {
     "canonical": "Real Madrid",
     "football_data": ["Real Madrid CF"],
     "soccerdata": ["Real Madrid"]
-  },
-  "real_oviedo": {
-    "canonical": "Real Oviedo",
-    "football_data": ["Real Oviedo"],
-    "soccerdata": ["Real Oviedo"]
   },
   "real_sociedad": {
     "canonical": "Real Sociedad",
@@ -130,15 +130,15 @@ TEAMS = {
     "football_data": ["Brighton & Hove Albion FC"],
     "soccerdata": ["Brighton & Hove Albion"]
   },
-  "burnley": {
-    "canonical": "Burnley",
-    "football_data": ["Burnley FC"],
-    "soccerdata": ["Burnley"]
-  },
   "chelsea": {
     "canonical": "Chelsea",
     "football_data": ["Chelsea FC"],
     "soccerdata": ["Chelsea"]
+  },
+  "coventry": {
+    "canonical": "Coventry",
+    "football_data": ["Coventry City FC"],
+    "soccerdata": ["Coventry City"]
   },
   "crystal_palace": {
     "canonical": "Crystal Palace",
@@ -154,6 +154,16 @@ TEAMS = {
     "canonical": "Fulham",
     "football_data": ["Fulham FC"],
     "soccerdata": ["Fulham"]
+  },
+  "hull_city": {
+    "canonical": "Hull City",
+    "football_data": ["Hull City AFC"],
+    "soccerdata": ["Hull City"]
+  },
+  "ipswich": {
+    "canonical": "Ipswich",
+    "football_data": ["Ipswich Town FC"],
+    "soccerdata": ["Ipswich Town"]
   },
   "leeds": {
     "canonical": "Leeds",
@@ -195,16 +205,6 @@ TEAMS = {
     "football_data": ["Tottenham Hotspur FC"],
     "soccerdata": ["Tottenham Hotspur"]
   },
-  "west_ham": {
-    "canonical": "West Ham",
-    "football_data": ["West Ham United FC"],
-    "soccerdata": ["West Ham United"]
-  },
-  "wolverhampton": {
-    "canonical": "Wolverhampton",
-    "football_data": ["Wolverhampton Wanderers FC"],
-    "soccerdata": ["Wolverhampton Wanderers"]
-  },
   
   # Championship:
   "birmingham": {
@@ -217,40 +217,40 @@ TEAMS = {
     "football_data": ["Blackburn Rovers FC"],
     "soccerdata": ["Blackburn Rovers"]
   },
+  "bolton": {
+    "canonical": "Bolton",
+    "football_data": ["Bolton Wanderers FC"],
+    "soccerdata": ["Bolton Wanderers"]
+  },
   "bristol_city": {
     "canonical": "Bristol City",
     "football_data": ["Bristol City FC"],
     "soccerdata": ["Bristol City"]
+  },
+  "burnley": {
+    "canonical": "Burnley",
+    "football_data": ["Burnley FC"],
+    "soccerdata": ["Burnley"]
+  },
+  "cardiff": {
+    "canonical": "Cardiff",
+    "football_data": ["Cardiff City FC"],
+    "soccerdata": ["Cardiff City"]
   },
   "charlton": {
     "canonical": "Charlton",
     "football_data": ["Charlton Athletic FC"],
     "soccerdata": ["Charlton Athletic"]
   },
-  "coventry": {
-    "canonical": "Coventry",
-    "football_data": ["Coventry City FC"],
-    "soccerdata": ["Coventry City"]
-  },
   "derby_county": {
     "canonical": "Derby County",
     "football_data": ["Derby County FC"],
     "soccerdata": ["Derby County"]
   },
-  "hull_city": {
-    "canonical": "Hull City",
-    "football_data": ["Hull City AFC"],
-    "soccerdata": ["Hull City"]
-  },
-  "ipswich": {
-    "canonical": "Ipswich",
-    "football_data": ["Ipswich Town FC"],
-    "soccerdata": ["Ipswich Town"]
-  },
-  "leicester": {
-    "canonical": "Leicester City",
-    "football_data": ["Leicester City FC"],
-    "soccerdata": ["Leicester City"]
+  "lincoln": {
+    "canonical": "Lincoln",
+    "football_data": ["Lincoln City FC"],
+    "soccerdata": ["Lincoln City"]
   },
   "middlesbrough": {
     "canonical": "Middlesbrough",
@@ -266,11 +266,6 @@ TEAMS = {
     "canonical": "Norwich",
     "football_data": ["Norwich City FC"],
     "soccerdata": ["Norwich City"]
-  },
-  "oxford_united": {
-    "canonical": "Oxford United",
-    "football_data": ["Oxford United FC"],
-    "soccerdata": ["Oxford United"]
   },
   "portsmouth": {
     "canonical": "Portsmouth",
@@ -291,11 +286,6 @@ TEAMS = {
     "canonical": "Sheffield United",
     "football_data": ["Sheffield United FC"],
     "soccerdata": ["Sheffield United"]
-  },
-  "sheffield_wednesday": {
-    "canonical": "Sheffield Wednesday",
-    "football_data": ["Sheffield Wednesday FC"],
-    "soccerdata": ["Sheffield Wednesday"]
   },
   "southampton": {
     "canonical": "Southampton",
@@ -322,6 +312,16 @@ TEAMS = {
     "football_data": ["West Bromwich Albion FC"],
     "soccerdata": ["West Bromwich Albion"]
   },
+  "west_ham": {
+    "canonical": "West Ham",
+    "football_data": ["West Ham United FC"],
+    "soccerdata": ["West Ham United"]
+  },
+  "wolverhampton": {
+    "canonical": "Wolverhampton",
+    "football_data": ["Wolverhampton Wanderers FC"],
+    "soccerdata": ["Wolverhampton Wanderers"]
+  },
   "wrexham": {
     "canonical": "Wrexham",
     "football_data": ["Wrexham AFC"],
@@ -344,6 +344,11 @@ TEAMS = {
     "football_data": ["Borussia Dortmund"],
     "soccerdata": ["Borussia Dortmund"]
   },
+  "elversberg": {
+    "canonical": "Elversberg",
+    "football_data": ["SV 07 Elversberg"],
+    "soccerdata": ["Elversberg"]
+  },
   "frankfurt": {
     "canonical": "Frankfurt",
     "football_data": ["Eintracht Frankfurt"],
@@ -358,11 +363,6 @@ TEAMS = {
     "canonical": "Hamburger",
     "football_data": ["Hamburger SV"],
     "soccerdata": ["Hamburg"]
-  },
-  "heidenheim": {
-    "canonical": "Heidenheim",
-    "football_data": ["1. FC Heidenheim 1846"],
-    "soccerdata": ["Heidenheim"]
   },
   "hoffenheim": {
     "canonical": "Hoffenheim",
@@ -394,10 +394,15 @@ TEAMS = {
     "football_data": ["Borussia Mönchengladbach"],
     "soccerdata": ["Borussia M'gladbach"]
   },
-  "st_pauli": {
-    "canonical": "St. Pauli",
-    "football_data": ["FC St. Pauli 1910"],
-    "soccerdata": ["St. Pauli"]
+  "paderborn": {
+    "canonical": "Paderborn",
+    "football_data": ["SC Paderborn 07"],
+    "soccerdata": ["Paderborn"]
+  },
+  "schalke": {
+    "canonical": "Schalke",
+    "football_data": ["FC Schalke 04"],
+    "soccerdata": ["Schalke 04"]
   },
   "stuttgart": {
     "canonical": "Stuttgart",
@@ -413,11 +418,6 @@ TEAMS = {
     "canonical": "Werder Bremen",
     "football_data": ["SV Werder Bremen"],
     "soccerdata": ["Werder Bremen"]
-  },
-  "wolfsburg": {
-    "canonical": "Wolfsburg",
-    "football_data": ["VfL Wolfsburg"],
-    "soccerdata": ["Wolfsburg"]
   },
   
   # Serie A:
@@ -441,25 +441,20 @@ TEAMS = {
     "football_data": ["Como 1907"],
     "soccerdata": ["Como"]
   },
-  "cremonese": {
-    "canonical": "Cremonese",
-    "football_data": ["US Cremonese"],
-    "soccerdata": ["Cremonese"]
-  },
   "fiorentina": {
     "canonical": "Fiorentina",
     "football_data": ["ACF Fiorentina"],
     "soccerdata": ["Fiorentina"]
   },
+  "frosinone": {
+    "canonical": "Frosinone",
+    "football_data": ["Frosinone Calcio"],
+    "soccerdata": ["Frosinone"]
+  },
   "genoa": {
     "canonical": "Genoa",
     "football_data": ["Genoa CFC"],
     "soccerdata": ["Genoa"]
-  },
-  "hellas_verona": {
-    "canonical": "Hellas Verona",
-    "football_data": ["Hellas Verona FC"],
-    "soccerdata": ["Verona"]
   },
   "inter": {
     "canonical": "Inter",
@@ -486,6 +481,11 @@ TEAMS = {
     "football_data": ["AC Milan"],
     "soccerdata": ["AC Milan"]
   },
+  "monza": {
+    "canonical": "Monza",
+    "football_data": ["AC Monza"],
+    "soccerdata": ["Monza"]
+  },
   "napoli": {
     "canonical": "Napoli",
     "football_data": ["SSC Napoli"],
@@ -495,11 +495,6 @@ TEAMS = {
     "canonical": "Parma",
     "football_data": ["Parma Calcio 1913"],
     "soccerdata": ["Parma"]
-  },
-  "pisa": {
-    "canonical": "Pisa",
-    "football_data": ["AC Pisa 1909"],
-    "soccerdata": ["Pisa"]
   },
   "roma": {
     "canonical": "Roma",
@@ -520,6 +515,11 @@ TEAMS = {
     "canonical": "Udinese",
     "football_data": ["Udinese Calcio"],
     "soccerdata": ["Udinese"]
+  },
+  "venezia": {
+    "canonical": "Venezia",
+    "football_data": ["Venezia FC"],
+    "soccerdata": ["Venezia"] 
   },
 
   # Ligue 1:
@@ -548,6 +548,11 @@ TEAMS = {
     "football_data": ["Racing Club de Lens"],
     "soccerdata": ["Lens"]
   },
+  "le_mans": {
+    "canonical": "Le Mans",
+    "football_data": ["Le Mans FC"],
+    "soccerdata": ["Le Mans"] 
+  },
   "lille": {
     "canonical": "Lille",
     "football_data": ["Lille OSC"],
@@ -568,20 +573,10 @@ TEAMS = {
     "football_data": ["Olympique de Marseille"],
     "soccerdata": ["Marseille"]
   },
-  "metz": {
-    "canonical": "Metz",
-    "football_data": ["FC Metz"],
-    "soccerdata": ["Metz"]
-  },
   "monaco": {
     "canonical": "Monaco",
     "football_data": ["AS Monaco FC"],
     "soccerdata": ["Monaco"]
-  },
-  "nantes": {
-    "canonical": "Nantes",
-    "football_data": ["FC Nantes"],
-    "soccerdata": ["Nantes"]
   },
   "nice": {
     "canonical": "Nice",
@@ -613,8 +608,18 @@ TEAMS = {
     "football_data": ["Toulouse FC"],
     "soccerdata": ["Toulouse"]
   },
+  "troyes": {
+    "canonical": "Troyes",
+    "football_data": ["ES Troyes AC"],
+    "soccerdata": ["Troyes"]
+  },
   
   # Primeira Liga:
+  "academico_viseu": {
+    "canonical": "Académico Viseu",
+    "football_data": ["Académico de Viseu FC"],
+    "soccerdata": ["Academico Viseu"]
+  },
   "alverca": {
     "canonical": "Alverca",
     "football_data": ["FC Alverca"],
@@ -629,11 +634,6 @@ TEAMS = {
     "canonical": "Arouca",
     "football_data": ["FC Arouca"],
     "soccerdata": ["Arouca"]
-  },
-  "avs": {
-    "canonical": "AVS",
-    "football_data": ["AVS"],
-    "soccerdata": ["AVS"]
   },
   "benfica": {
     "canonical": "Benfica",
@@ -665,6 +665,11 @@ TEAMS = {
     "football_data": ["Gil Vicente FC"],
     "soccerdata": ["Gil Vicente"]
   },
+  "maritimo": {
+    "canonical": "Marítimo",
+    "football_data": ["CS Marítimo"],
+    "soccerdata": ["Maritimo"]
+  },
   "moreirense": {
     "canonical": "Moreirense",
     "football_data": ["Moreirense FC"],
@@ -695,11 +700,6 @@ TEAMS = {
     "football_data": ["Sporting Clube de Portugal"],
     "soccerdata": ["Sporting Lisbon"]
   },
-  "tondela": {
-    "canonical": "Tondela",
-    "football_data": ["CD Tondela"],
-    "soccerdata": ["Tondela"]
-  },
   "vitoria": {
     "canonical": "Vitória",
     "football_data": ["Vitória SC"],
@@ -707,6 +707,11 @@ TEAMS = {
   },
 
   # Eredivisie:
+  "ADO": {
+    "canonical": "ADO",
+    "football_data": ["ADO Den Haag"],
+    "soccerdata": ["ADO Den Haag"]
+  },
   "ajax": {
     "canonical": "Ajax",
     "football_data": ["AFC Ajax"],
@@ -716,6 +721,11 @@ TEAMS = {
     "canonical": "AZ",
     "football_data": ["AZ"],
     "soccerdata": ["AZ"]
+  },
+  "cambuur": {
+    "canonical": "Cambuur",
+    "football_data": ["SC Cambuur-Leeuwarden"],
+    "soccerdata": ["Cambuur"]
   },
   "excelsior": {
     "canonical": "Excelsior",
@@ -741,16 +751,6 @@ TEAMS = {
     "canonical": "Heerenveen",
     "football_data": ["SC Heerenveen"],
     "soccerdata": ["Heerenveen"]
-  },
-  "heracles": {
-    "canonical": "Heracles",
-    "football_data": ["Heracles Almelo"],
-    "soccerdata": ["Heracles"]
-  },
-  "nac": {
-    "canonical": "NAC",
-    "football_data": ["NAC Breda"],
-    "soccerdata": ["NAC Breda"]
   },
   "nec": {
     "canonical": "NEC",
@@ -787,19 +787,25 @@ TEAMS = {
     "football_data": ["FC Utrecht"],
     "soccerdata": ["Utrecht"]
   },
-  "volendam": {
-    "canonical": "Volendam",
-    "football_data": ["FC Volendam"],
-    "soccerdata": ["Volendam"]
-  },
   "zwolle": {
     "canonical": "Zwolle",
     "football_data": ["PEC Zwolle"],
     "soccerdata": ["PEC Zwolle"]
   },
+  "willem_II": {
+    "canonical": "Willem II",
+    "football_data": ["Willem II Tilburg"],
+    "soccerdata": ["Willem II"]
+  },
   
   # Champions League:
-  # Ya están previamente: Leverkusen, Dortmund, Bayern, Frankfurt, Arsenal, Chelsea, Liverpool, Manchester City, Newcastle, Tottenham, Athletic, Atlético de Madrid, Barcelona, Real Madrid, Villarreal, Atalanta, Inter, Juventus, Napoli, Sporting, Marsella, PSG, Monaco, PSV, Ajax y Benfica.
+  # Ya están previamente: Leipzig, Dortmund, Bayern, Stuttgart, Arsenal, Manchester United, Liverpool, Manchester City, Newcastle, Aston Villa, Atlético de Madrid, Barcelona, Betis, Real Madrid, Villarreal, Como, Inter, Roma, Napoli, Lens, PSG, Lille, PSV, Feyenoord y Porto.
+  
+  "aek": {
+    "canonical": "AEK",
+    "football_data": ["PAE AEK"],
+    "soccerdata": ["AEK"]
+  },
   "bodo_glimt": {
     "canonical": "Bodø/Glimt",
     "football_data": ["FK Bodø/Glimt"],
@@ -810,45 +816,45 @@ TEAMS = {
     "football_data": ["Club Brugge KV"],
     "soccerdata": ["Brugge"]
   },
+  "fenerbahçe": {
+    "canonical": "Fenerbahçe",
+    "football_data": ["Fenerbahçe SK"],
+    "soccerdata": ["Fenerbahçe"]
+  },
   "galatasaray": {
     "canonical": "Galatasaray",
     "football_data": ["Galatasaray SK"],
     "soccerdata": ["Galatasaray"]
   },
-  "qarabag": {
-    "canonical": "Qarabag",
-    "football_data": ["Qarabağ Ağdam FK"],
-    "soccerdata": ["Qarabag"]
+  "lask": {
+    "canonical": "LASK",
+    "football_data": ["LASK Linz"],
+    "soccerdata": ["LASK"]
   },
-  "kairat": {
-    "canonical": "Kairat",
-    "football_data": ["FK Kairat"],
-    "soccerdata": ["Kairat"]
+  "sabah": {
+    "canonical": "Sabah",
+    "football_data": ["Sabah FK"],
+    "soccerdata": ["Sabah"]
   },
-  "kobenhavn": {
-    "canonical": "København",
-    "football_data": ["FC København"],
-    "soccerdata": ["København"]
-  },
-  "olympiakos": {
-    "canonical": "Olympiakos",
-    "football_data": ["PAE Olympiakos SFP"],
-    "soccerdata": ["Olympiakos"]
-  },
-  "paphos": {
-    "canonical": "Paphos",
-    "football_data": ["Paphos FC"],
-    "soccerdata": ["Paphos"]
+  "shakhtar": {
+    "canonical": "Shakhtar",
+    "football_data": ["FK Shakhtar Donetsk"],
+    "soccerdata": ["Shakhtar"]
   },
   "slavia_praha": {
     "canonical": "Slavia Praha",
     "football_data": ["SK Slavia Praha"],
     "soccerdata": ["Slavia Praha"]
   },
-  "union_sg": {
-    "canonical": "Union SG",
-    "football_data": ["Royale Union Saint-Gilloise"],
-    "soccerdata": ["Union SG"]
+  "slovan_bratislava": {
+    "canonical": "Slovan Bratislava",
+    "football_data": ["ŠK Slovan Bratislava"],
+    "soccerdata": ["Slovan Bratislava"]
+  },
+  "viking": {
+    "canonical": "Viking",
+    "football_data": ["Viking FK"],
+    "soccerdata": ["Viking"]
   }
 }
 
